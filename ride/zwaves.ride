@@ -86,7 +86,9 @@ func withdrawal(proof:ByteVector, v:ByteVector) = {
 
 
 @Callable(i)
-func transfer(proof:ByteVector, v:ByteVector) = {
+func transfer(msg:ByteVector, sig:ByteVector, pub:ByteVector) = {
+    let proof = take(msg, 256);
+    let v = takeRight(msg, 320);
     let uk0 = getUtxoKey(takeLR(v, 0, 32))
     let uk1 = getUtxoKey(takeLR(v, 32, 64))
     let uk2 = getUtxoKey(takeLR(v, 64, 96))
@@ -97,13 +99,17 @@ func transfer(proof:ByteVector, v:ByteVector) = {
     let uk7 = getUtxoKey(takeLR(v, 224, 256))
     let ouk0 = getUtxoKey(takeLR(v, 256, 288))
     let ouk1 = getUtxoKey(takeLR(v, 288, 320))
-    let owner = i.caller.bytes
+    let owner = addressFromPublicKey(pub).bytes
     let v2 = v + base58'111111' + owner
 
     let osk0 = getSecretKey(owner, takeLR(v, 320, 352))
     let osk1 = getSecretKey(owner, takeLR(v, 352, 384))
- 
-    if (flagExists(osk0) || flagExists(osk1)) then 
+    
+    if (i.caller!=this) then
+        throw("wrong caller")
+    else if (!sigVerify(msg, sig, pub)) then 
+        throw("wrong signature")
+    else if (flagExists(osk0) || flagExists(osk1)) then 
         throw("doublespend detected")
     else if (flagNotExists(uk0) || flagNotExists(uk1) || flagNotExists(uk2) || flagNotExists(uk3) || flagNotExists(uk4) || flagNotExists(uk5) || flagNotExists(uk6) || flagNotExists(uk7)) then
         throw("input utxo not exists")
@@ -147,5 +153,8 @@ func deposit(proof:ByteVector, v:ByteVector) = {
 
 @Verifier(tx)
 func verify() = {
-    true
+    match tx {
+        case tx:InvokeScriptTransaction =>  (tx.function == "transfer") || sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+        case _ => true #todo: replace to false
+    }
 }

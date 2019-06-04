@@ -1,0 +1,26 @@
+{
+  "name": "anonymous-transactions-prototype",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wavesplatform/anonymous-transactions-prototype.git"
+  },
+  "author": "Igor Gulamov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wavesplatform/anonymous-transactions-prototype/issues"
+  },
+  "homepage": "https://github.com/wavesplatform/anonymous-transactions-prototype#readme",
+  "dependencies": {
+    "@waves/ride-js": "^0.17.7",
+    "@waves/waves-crypto": "2.1.1",
+    "@waves/waves-transactions": "^3.7.2",
+    "dotenv": "^6.2.0",
+    "typescript": "^3.2.2"
+  }
+}
