@@ -1,5 +1,5 @@
 const { compile } = require("@waves/ride-js");
-const { broadcast, setScript } = require("@waves/waves-transactions");
+const { broadcast, waitForTx, setScript } = require("@waves/waves-transactions");
 
 const fs = require("fs");
 
@@ -19,8 +19,8 @@ const compiled = compile(data);
 
 async function main() {
   const tx = setScript({ script: compiled.result.base64, fee: 1400000, chainId: 'D' }, seed);
-  const res = await broadcast(tx, rpc);
-  console.log(res);
+  await broadcast(tx, rpc);
+  await waitForTx(tx.id, { apiBase: rpc });
   process.exit();
 }
 

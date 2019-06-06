@@ -31,8 +31,6 @@ func flagExists(key:String) = {
 func flagNotExists(key:String) = !flagExists(key)
 
 
-
-
 # Withdrawal input structure
 # public:
 #   hash     256
@@ -42,20 +40,22 @@ func flagNotExists(key:String) = !flagExists(key)
 # private:
 #   salt      80 
 
-#func parseWithdrawalInput(v:ByteVector) = {
-#    take(v, 32), toInt(v, 32 + 3*8), takeLR(v, 64, 96), takeLR(v, 96, 128)
-#}
-
 @Callable(i)
-func withdrawal(proof:ByteVector, v:ByteVector) = {
+func withdrawal(msg:ByteVector, sig:ByteVector, pub:ByteVector) = {
+    let proof = take(msg, 256);
+    let v = takeRight(msg, 96);
     let hash = take(v, 32)
     let balance = toInt(v, 32 + 3*8)
     let secret = takeLR(v, 64, 96)
-    let owner = i.caller.bytes
+    let owner = addressFromPublicKey(pub).bytes
     let v2 = v + base58'111111' + owner
     let secretKey = getSecretKey(owner, secret)
- 
-    if (flagExists(secretKey)) then 
+    
+    if (i.caller!=this) then
+        throw("wrong caller")
+    else if (!sigVerify(msg, sig, pub)) then 
+        throw("wrong signature")
+    else if (flagExists(secretKey)) then 
         throw("doublespend detected")
     else if (flagNotExists(getUtxoKey(hash))) then
         throw("utxo not exists")
@@ -64,7 +64,7 @@ func withdrawal(proof:ByteVector, v:ByteVector) = {
     else
         ScriptResult(
             WriteSet([DataEntry(secretKey, true)]),
-            TransferSet([ScriptTransfer(i.caller, balance, unit)])
+            TransferSet([ScriptTransfer(Address(owner), balance, unit)])
         )
 }
 
@@ -154,7 +154,7 @@ func deposit(proof:ByteVector, v:ByteVector) = {
 @Verifier(tx)
 func verify() = {
     match tx {
-        case tx:InvokeScriptTransaction =>  (tx.function == "transfer") || sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+#        case tx:InvokeScriptTransaction =>  (tx.function == "transfer") || sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
         case _ => true #todo: replace to false
     }
 }

@@ -1,4 +1,4 @@
-const { broadcast, invokeScript } = require("@waves/waves-transactions");
+const { broadcast, waitForTx, invokeScript } = require("@waves/waves-transactions");
 const { address, base58encode } = require("@waves/waves-crypto");
 
 const env = process.env;
@@ -8,8 +8,9 @@ if (env.NODE_ENV !== 'production') {
 
 
 const chainId = env.WAVES_CHAINID;
-const dappAddress = address(env.MNEMONIC, chainId);
+const dApp = address(env.MNEMONIC, chainId);
 const testacc = env.MNEMONIC_TEST;
+const rpc = env.WAVES_RPC;
 
 function u256vec(n) {
   const res = new Uint8Array(32);
@@ -18,7 +19,7 @@ function u256vec(n) {
     res[i] = parseInt(t & 0xffn);
     t >>= 8n;
   }
-  return base58encode(res);
+  return Buffer.from(res).toString("base4");
 }
 
 function vec256rand() {
@@ -26,28 +27,29 @@ function vec256rand() {
   for (let i = 31; i >= 0; i--) {
     res[i] = Math.floor(Math.random() * 256);
   }
-  return base58encode(res);
+  return Buffer.from(res).toString("base64");
 }
 
 
 async function depositTest(hash) {
   const tx = invokeScript({
-    dappAddress,
+    dApp,
     chainId,
     call: {
       function: "deposit",
-      args: [{ type: "binary", value: base58encode([]) }, { type: "binary", hash }]
+      args: [{ type: "binary", value: "" }, { type: "binary", value: hash }]
     }, payment: [{ amount: "100000000" }]
   }, testacc);
-  return await broadcast(tx, WAVES_RPC);
+  return await broadcast(tx, rpc);
 }
 
 async function withdrawal() { }
 
 async function main() {
   const hashValue = vec256rand();
-  let res = await depositTest(hashValue);
+  const res = await depositTest(hashValue);
   console.log(res);
+  await waitForTx(res.id, { apiBase: rpc })
   process.exit();
 }
 
