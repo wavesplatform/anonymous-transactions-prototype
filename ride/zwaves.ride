@@ -118,7 +118,7 @@ func transfer(msg:ByteVector, sig:ByteVector, pub:ByteVector) = {
     else if (!groth16Verify(transferVK, proof, v2)) then 
         throw("wrong proof")
     else
-        WriteSet([DataEntry(ouk0, true), DataEntry(ouk1, true)])
+        WriteSet([DataEntry(ouk0, true), DataEntry(ouk1, true), DataEntry(osk0, true), DataEntry(osk1, true)])
 }
 
 
