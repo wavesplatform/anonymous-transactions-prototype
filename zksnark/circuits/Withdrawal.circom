@@ -5,6 +5,8 @@ template Withdrawal(N) {
 
   signal input in_hashes[N];
   signal input nullifier;
+  signal input receiver;
+
   signal private input index;
   
   signal private input balance;
@@ -13,7 +15,9 @@ template Withdrawal(N) {
   signal private input pubkey;
   signal private input privkey;
 
-
+  component null_receiver = IsZero();
+  null_receiver.in <== receiver;
+  null_receiver.out === 0;
   
 
   component in_hash = Selector(N);
