@@ -54,6 +54,23 @@ func deposit(proof:ByteVector, v:ByteVector)
 
 #### zkSNARK
 
+```
+# Transfer input structure
+# public:
+#   in_hashes[8]       256
+#   out_hashes[2]      256
+#   in_secrets[2]      160
+#   owner              208
+# private:
+#   in_selectors[2][8]
+#   in_balances[2]      64
+#   in_salts[2]         80
+#   out_balance[2]      64
+#   out_secrets[2]     160
+#   out_salt[2]         80
+#   out_owner[2]       208
+```
+
 #### Ride
 ```
 func transfer(msg:ByteVector, sig:ByteVector, pub:ByteVector) 
