@@ -1,5 +1,5 @@
 {
-  "name": "anonymous-transactions-prototype",
+  "name": "anonymous-transactions-prototype-zksnark",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -11,7 +11,7 @@
     "url": "git+https://github.com/wavesplatform/anonymous-transactions-prototype.git"
   },
   "author": "Igor Gulamov",
-  "license": "MIT",
+  "license": "GPLv3",
   "bugs": {
     "url": "https://github.com/wavesplatform/anonymous-transactions-prototype/issues"
   },
