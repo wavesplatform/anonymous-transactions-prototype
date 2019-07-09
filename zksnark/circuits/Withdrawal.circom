@@ -10,8 +10,8 @@ template Withdrawal(N) {
   signal private input balance;
   signal private input secret;
 
-  signal private input owner;
-  signal private input owner_preimage;
+  signal private input pubkey;
+  signal private input privkey;
 
 
   
@@ -26,7 +26,7 @@ template Withdrawal(N) {
   component utxohash = UTXOHasher();
 
   utxohash.balance <== balance;
-  utxohash.owner <== owner;
+  utxohash.pubkey <== pubkey;
   utxohash.secret <== secret;
 
   utxohash.out === in_hash.out;
@@ -34,15 +34,15 @@ template Withdrawal(N) {
 
 
   
-  component checkPreimage = Hasher();
-  checkPreimage.in <== owner_preimage;
-  checkPreimage.out === owner;
+  component cpubkey = PubKey();
+  checkPreimage.in <== privkey;
+  checkPreimage.out === pubkey;
 
   component cnullifier = Compressor();
-  cnullifier.in[0] <== owner_preimage;
+  cnullifier.in[0] <== privkey;
   cnullifier.in[1] <== secret;
 
-  nullifier[0] === cnullifier[0].out;
+  nullifier === cnullifier[0].out;
 
 }
 

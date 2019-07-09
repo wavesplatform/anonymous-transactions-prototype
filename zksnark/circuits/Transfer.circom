@@ -13,8 +13,8 @@ template Transfer(N, C) {
   signal private input balance[4];
   signal private input secret[4];
 
-  signal private input owner;
-  signal private input owner_preimage;
+  signal private input pubkey;
+  signal private input privkey;
   signal private input entropy;
 
   signal hashes[4];
@@ -43,24 +43,24 @@ template Transfer(N, C) {
   for (var i=0; i<4; i++) {
     utxohash[i] = UTXOHasher();
     utxohash.balance <== balance[i];
-    utxohash.owner <== owner[i];
+    utxohash.pubkey <== pubkey;
     utxohash.secret <== secret[i];
     hashes[i] === utxohash[i].out;
   }
 
-  component is_inputs_same = isZero();
-  is_inputs_same.in <== hashes[0]-hashes[1];
+  component are_inputs_same = isZero();
+  are_inputs_same.in <== hashes[0]-hashes[1];
 
   
-  component checkPreimage = Hasher();
-  checkPreimage.in <== owner_preimage;
-  checkPreimage.out === owner;
+  component cpubkey = PubKey();
+  checkPreimage.in <== privkey;
+  checkPreimage.out === pubkey;
 
   component cnullifier[2];
 
   for(var i=0; i<2; i++) {
     cnullifier[i] = Compressor();
-    cnullifier[i].in[0] <== owner_preimage;
+    cnullifier[i].in[0] <== privkey;
     cnullifier[i].in[1] <== secret[i];
   }
 
@@ -70,9 +70,9 @@ template Transfer(N, C) {
   replacement_nullifier.in[1] <== entropy;
 
   nullifier[0] === cnullifier[0].out;
-  nullifier[1] === cnullifier[1].out + (replacement_nullifier.out - cnullifier[1].out) * is_inputs_same.out;
+  nullifier[1] === cnullifier[1].out + (replacement_nullifier.out - cnullifier[1].out) * are_inputs_same.out;
 
-  balance[0] + balance[1] * (1 - is_inputs_same.out) === balance[2] + balance[3] + C;
+  balance[0] + balance[1] * (1 - are_inputs_same.out) === balance[2] + balance[3] + C;
 
 }
 

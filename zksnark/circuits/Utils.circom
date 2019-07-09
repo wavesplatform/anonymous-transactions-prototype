@@ -1,16 +1,17 @@
 include "../circomlib/circuits/pedersen.circom";
 include "../circomlib/circuits/bitify.circom";
 include "../circomlib/circuits/comparators.circom";
+include "../circomlib/circuits/escalarmulfix.circom"
 
 
 
 template UTXOHasher() {
   signal input balance;
-  signal input owner;
+  signal input pubkey;
   signal input secret;
   signal output out;
 
-  component hasher = Pedersen(568);
+  component hasher = Pedersen(570);
   var cur = 0;
   var i;
 
@@ -21,17 +22,17 @@ template UTXOHasher() {
     cur+=1;
   }
 
-  component b_owner = Num2Bits(251);
-  b_owner.in <== owner;
-  for (i = 0; i<251; i++) {
-    hasher.in[cur] <== b_owner.out[i];
+  component b_pubkey = Num2Bits(253);
+  b_pubkey.in <== pubkey;
+  for (i = 0; i<253; i++) {
+    hasher.in[cur] <== b_pubkey.out[i];
     cur+=1;
   }
 
-  component b_secret = Num2Bits(251);
-  b_owner.in <== owner;
-  for (i = 0; i<251; i++) {
-    hasher.in[cur] <== b_owner.out[i];
+  component b_secret = Num2Bits(253);
+  b_pubkey.in <== pubkey;
+  for (i = 0; i<253; i++) {
+    hasher.in[cur] <== b_pubkey.out[i];
     cur+=1;
   }
 
@@ -64,20 +65,61 @@ template Selector(N) {
 }
 
 
-template Haser() {
+template PubKey() {
   signal input in;
   signal output out;
 
+  var BASE = [
+    17777552123799933955779906779655732241715742912184938656739573121738514868268,
+    2626589144620713026669568689430873010625803728049924121243784502389097019475
+  ];
+  component ecmul = EscalarMulFix(253, BASE);
+  component in_bits = Num2Bits(253);
+  in_bits.in <== in;
+  for (var i=0; i<251; i++) {
+    ecmul.in[i] <== in_bits.out[i];
+  }
+  out <== ecmul.out[0];
+}
 
-  component b_in = Num2Bits(251);
-  component h_out = Pedersen(251);
+template Hasher() {
+  signal input in;
+  signal output out;
+
+  component b_in = Num2Bits(253);
+  component h_out = Pedersen(253);
 
   b_in.in <== in;
-  for (var i=0; i<251; i++) {
+
+  for (var i=0; i<253; i++) {
     h_out.in[i] <== b_in.out[i];
   }
 
   out <== h_out.out[0];
+}
+
+
+template Hasher253() {
+  signal input in;
+  signal output out;
+
+  component b_in = Num2Bits(253);
+  component h_out = Pedersen(253);
+
+  b_in.in <== in;
+
+  for (var i=0; i<253; i++) {
+    h_out.in[i] <== b_in.out[i];
+  }
+
+  component b_out1 = Num2Bits_strict();
+  component b_out2 = Bits2Num(253);
+
+  b_out1.in <== h_out.out[0];
+  for (var i=0; i<253; i++) {
+    b_out2.in[i] <== b_out1.out[i];
+  }
+  out <== b_out2.out;
 }
 
 
@@ -87,20 +129,48 @@ template Compressor() {
   component b_in[2];
 
   for(var i=0; i<2; i++) {
-    b_in[i] = Num2Bits(251);
+    b_in[i] = Num2Bits(253);
     b_in[i].in <== in[i];
   }
-  component h_out = Pedersen(502);
+  component h_out = Pedersen(506);
 
-  for (var i=0; i<251; i++) {
+  for (var i=0; i<253; i++) {
     h_out.in[i] <== b_in[0].out[i];
   }
 
-  for (var i=0; i<251; i++) {
-    h_out.in[251+i] <== b_in[1].out[i];
+  for (var i=0; i<253; i++) {
+    h_out.in[253+i] <== b_in[1].out[i];
   }
 
   out <== h_out.out[0];
 }
 
 
+template Compressor253() {
+  signal input in[2];
+  signal output out;
+  component b_in[2];
+
+  for(var i=0; i<2; i++) {
+    b_in[i] = Num2Bits(253);
+    b_in[i].in <== in[i];
+  }
+  component h_out = Pedersen(506);
+
+  for (var i=0; i<253; i++) {
+    h_out.in[i] <== b_in[0].out[i];
+  }
+
+  for (var i=0; i<253; i++) {
+    h_out.in[253+i] <== b_in[1].out[i];
+  }
+
+  component b_out1 = Num2Bits_strict();
+  component b_out2 = Bits2Num(253);
+
+  b_out1.in <== h_out.out[0];
+  for (var i=0; i<253; i++) {
+    b_out2.in[i] <== b_out1.out[i];
+  }
+  out <== b_out2.out;
+}
