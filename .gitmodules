@@ -1,0 +1,3 @@
+[submodule "zksnark/circomlib"]
+	path = zksnark/circomlib
+	url = https://github.com/iden3/circomlib
