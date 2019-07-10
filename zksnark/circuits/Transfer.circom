@@ -1,6 +1,6 @@
 
 include "./Utils.circom";
-include "../circomlib/circuits/comparators.circom";
+include "../node_modules/circomlib/circuits/comparators.circom";
 
 
 template Transfer(N, C) {

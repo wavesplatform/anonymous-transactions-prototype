@@ -1,7 +1,7 @@
-include "../circomlib/circuits/pedersen.circom";
-include "../circomlib/circuits/bitify.circom";
-include "../circomlib/circuits/comparators.circom";
-include "../circomlib/circuits/escalarmulfix.circom"
+include "../node_modules/circomlib/circuits/pedersen.circom";
+include "../node_modules/circomlib/circuits/bitify.circom";
+include "../node_modules/circomlib/circuits/comparators.circom";
+include "../node_modules/circomlib/circuits/escalarmulfix.circom"
 
 
 

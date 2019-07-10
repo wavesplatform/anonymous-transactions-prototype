@@ -5,10 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "compileDeposit": "node node_modules/circom/cli.js circuits/Deposit.circom -o circuitsCompiled/Deposit.json",
-    "compileTransfer": "node node_modules/circom/cli.js circuits/Transfer.circom -o circuitsCompiled/Transfer.json",
-    "compileWithdrawal": "node node_modules/circom/cli.js circuits/Withdrawal.circom -o circuitsCompiled/Withdrawal.json"    
-
+    "compileDeposit": "node --max-old-space-size=4096 node_modules/circom/cli.js circuits/Deposit.circom -o circuitsCompiled/Deposit.json",
+    "compileTransfer": "node --max-old-space-size=4096 node_modules/circom/cli.js circuits/Transfer.circom -o circuitsCompiled/Transfer.json",
+    "compileWithdrawal": "node --max-old-space-size=4096 node_modules/circom/cli.js circuits/Withdrawal.circom -o circuitsCompiled/Withdrawal.json"    
   },
   "repository": {
     "type": "git",
