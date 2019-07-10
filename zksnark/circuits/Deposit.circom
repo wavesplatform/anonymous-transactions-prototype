@@ -14,16 +14,13 @@ include "./Utils.circom";
 template Deposit() {
   signal input balance;
   signal input hash;
-  signal input pubentropy;
   signal private input pubkey;
+  signal private input entropy;
 
-  signal private input priventropy;
+  component secret = Hasher253();
 
-  component secret = Compressor253();
+  secret.in <== entropy;
 
-  secret.in[0] <== pubentropy;
-  secret.in[1] <== priventropy;
-  
 
   component hasher = UTXOHasher();
   hasher.balance <== balance;

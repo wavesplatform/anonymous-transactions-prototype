@@ -1,5 +1,5 @@
 {
-  "name": "anonymous-transactions-prototype-zksnark",
+  "name": "zksnark",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -19,9 +19,10 @@
   "dependencies": {
     "@waves/waves-crypto": "^3.0.17",
     "@waves/waves-transactions": "^3.12.1",
-    "circom": "0.0.30",
+    "circom": "^0.0.28",
+    "circomlib": "^0.0.9",
     "dotenv": "^6.2.0",
     "node-fetch": "^2.6.0",
-    "snarkjs": "^0.1.14"
+    "snarkjs": "^0.1.11"
   }
 }
