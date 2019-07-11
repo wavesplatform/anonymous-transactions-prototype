@@ -60,9 +60,9 @@ template Transfer(N, C) {
 
   for (var i=0; i<4; i++) {
     utxohash[i] = UTXOHasher();
-    utxohash.balance <== balance[i];
-    utxohash.pubkey <== pubkey;
-    utxohash.secret <== secret[i];
+    utxohash[i].balance <== balance[i];
+    utxohash[i].pubkey <== pubkey;
+    utxohash[i].secret <== secret[i];
     hashes[i] === utxohash[i].out;
   }
 
