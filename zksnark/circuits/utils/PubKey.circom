@@ -12,8 +12,8 @@ template PubKey() {
   component ecmul = EscalarMulFix(253, BASE);
   component in_bits = Num2Bits(253);
   in_bits.in <== in;
-  for (var i=0; i<251; i++) {
-    ecmul.in[i] <== in_bits.out[i];
+  for (var i=0; i<253; i++) {
+    ecmul.e[i] <== in_bits.out[i];
   }
   out <== ecmul.out[0];
 }
