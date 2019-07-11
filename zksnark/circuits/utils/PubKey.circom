@@ -1,5 +1,5 @@
-include "../node_modules/circomlib/circuits/escalarmulfix.circom";
-include "../node_modules/circomlib/circuits/bitify.circom";
+include "../../node_modules/circomlib/circuits/escalarmulfix.circom";
+include "../../node_modules/circomlib/circuits/bitify.circom";
 
 template PubKey() {
   signal input in;

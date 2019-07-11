@@ -1,5 +1,5 @@
-include "../node_modules/circomlib/circuits/bitify.circom";
-include "../node_modules/circomlib/circuits/pedersen.circom";
+include "../../node_modules/circomlib/circuits/bitify.circom";
+include "../../node_modules/circomlib/circuits/pedersen.circom";
 
 template Hasher253() {
   signal input in;
