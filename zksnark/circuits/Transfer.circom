@@ -11,19 +11,26 @@ template Transfer(N, C) {
   signal private input index[2];
   
   signal private input balance[4];
-  signal private input entropy[4];
+  signal private input in_secret[2];
+  signal private input out_entropy[2];
 
   signal private input pubkey;
   signal private input privkey;
   signal private input entropy;
 
   signal hashes[4];
+  signal secret[4];
 
-  component secret[4];
-  for (var i=0;i<4;i++) {
-    secret[i] = Hasher253();
-    secret[i].in <== entropy[i];
+  component csecret[2];
+  for (var i=0;i<2;i++) {
+    csecret[i] = Hasher253();
+    csecret[i].in <== out_entropy[2];
   }
+
+  secret[0] <== in_secret[0];
+  secret[1] <== in_secret[1];
+  secret[2] <== csecret[0].out;
+  secret[3] <== csecret[1].out;
 
   
 
@@ -50,7 +57,7 @@ template Transfer(N, C) {
     utxohash[i] = UTXOHasher();
     utxohash.balance <== balance[i];
     utxohash.pubkey <== pubkey;
-    utxohash.secret <== secret[i].out;
+    utxohash.secret <== secret[i];
     hashes[i] === utxohash[i].out;
   }
 
@@ -67,7 +74,7 @@ template Transfer(N, C) {
   for(var i=0; i<2; i++) {
     cnullifier[i] = Compressor();
     cnullifier[i].in[0] <== privkey;
-    cnullifier[i].in[1] <== secret[i].out;
+    cnullifier[i].in[1] <== secret[i];
   }
 
 
