@@ -50,4 +50,4 @@ template Withdrawal(N) {
 
 }
 
-component main = Withdrawal(N);
+component main = Withdrawal(16);

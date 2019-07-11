@@ -80,4 +80,4 @@ function hash253(v) {
   return babyJub.unpackPoint(pedersenHash(b_v))[0] & ((1n<<254n)-1n);
 }
 
-console.log(hash253(1n));
+exports = {UTXOhasher, hash253}
