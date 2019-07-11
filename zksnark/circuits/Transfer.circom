@@ -71,8 +71,8 @@ template Transfer(N, C) {
 
   
   component cpubkey = PubKey();
-  checkPreimage.in <== privkey;
-  checkPreimage.out === pubkey;
+  cpubkey.in <== privkey;
+  cpubkey.out === pubkey;
 
   component cnullifier[2];
 

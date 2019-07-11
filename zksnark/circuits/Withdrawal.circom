@@ -41,8 +41,8 @@ template Withdrawal(N) {
 
   
   component cpubkey = PubKey();
-  checkPreimage.in <== privkey;
-  checkPreimage.out === pubkey;
+  cpubkey.in <== privkey;
+  cpubkey.out === pubkey;
 
   component cnullifier = Compressor();
   cnullifier.in[0] <== privkey;
