@@ -29,7 +29,7 @@ template Transfer(N, C) {
   component csecret[2];
   for (var i=0;i<2;i++) {
     csecret[i] = Hasher253();
-    csecret[i].in <== out_entropy[2];
+    csecret[i].in <== out_entropy[i];
   }
 
   secret[0] <== in_secret[0];
