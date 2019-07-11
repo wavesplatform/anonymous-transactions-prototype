@@ -66,7 +66,7 @@ template Transfer(N, C) {
     hashes[i] === utxohash[i].out;
   }
 
-  component are_inputs_same = isZero();
+  component are_inputs_same = IsZero();
   are_inputs_same.in <== hashes[0]-hashes[1];
 
   
