@@ -26,9 +26,9 @@ template UTXOHasher() {
   }
 
   component b_secret = Num2Bits(253);
-  b_pubkey.in <== pubkey;
+  b_secret.in <== secret;
   for (i = 0; i<253; i++) {
-    hasher.in[cur] <== b_pubkey.out[i];
+    hasher.in[cur] <== b_secret.out[i];
     cur+=1;
   }
 

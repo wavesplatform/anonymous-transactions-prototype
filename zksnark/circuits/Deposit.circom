@@ -2,15 +2,7 @@
 include "./utils/Hasher253.circom";
 include "./utils/UTXOHasher.circom";
 
-/*
-# Withdrawal input structure
-# public:
-#   hash     256
-#   balance   64
-# private:
-#   owner    251
-#   secret   251
-*/
+
 
 template Deposit() {
   signal input balance;
