@@ -1,5 +1,6 @@
 
-include "./Utils.circom";
+include "./utils/Hasher253.circom";
+include "./utils/UTXOHasher.circom";
 
 /*
 # Withdrawal input structure

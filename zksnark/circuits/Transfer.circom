@@ -1,5 +1,10 @@
 
-include "./Utils.circom";
+include "./utils/Hasher253.circom";
+include "./utils/UTXOHasher.circom";
+include "./utils/PubKey.circom";
+include "./utils/Compressor.circom";
+
+
 include "../node_modules/circomlib/circuits/comparators.circom";
 
 
