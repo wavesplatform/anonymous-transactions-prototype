@@ -2,6 +2,7 @@ include "./utils/Hasher253.circom";
 include "./utils/UTXOHasher.circom";
 include "./utils/PubKey.circom";
 include "./utils/Compressor.circom";
+include "./utils/Selector.circom";
 
 template Withdrawal(N) {
 
@@ -48,7 +49,7 @@ template Withdrawal(N) {
   cnullifier.in[0] <== privkey;
   cnullifier.in[1] <== secret;
 
-  nullifier === cnullifier[0].out;
+  nullifier === cnullifier.out;
 
 }
 
