@@ -130,14 +130,12 @@ function proof(input, name) {
   const circuit = new Circuit(fload(`./circuitsCompiled/${name}.json`));
   const pk = fload(`./circuitsCompiled/${name}_pk.json`);
   const witness = circuit.calculateWitness(input);
-//  return groth.genProof(pk, witness);
-  return {};
+  return groth.genProof(pk, witness);
 }
 
 function verify({proof, publicSignals}, name){
   const vk = fload(`./circuitsCompiled/${name}_vk.json`);
-//  return groth.isValid(vk, proof, publicSignals);
-  return true;
+  return groth.isValid(vk, proof, publicSignals);
 }
 
 

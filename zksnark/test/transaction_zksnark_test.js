@@ -119,10 +119,9 @@ describe("zkSNARK", ()=>{
     const name = 'Transfer';
     const tx = createTestTransfer2to2();
     const inputs = getTransferInputs(tx);
-    console.log(inputs);
     const proofData = proof(inputs, name);
     assert(verify(proofData, name), "Proof is invalid.")
-  }).timeout(120000)
+  }).timeout(6000000)
 
   it("check verifier for valid proof for Transfer 1to2", ()=>{
     const name = 'Transfer';
@@ -131,7 +130,7 @@ describe("zkSNARK", ()=>{
   
     const proofData = proof(inputs, name);
     assert(verify(proofData, name), "Proof is invalid.")
-  }).timeout(120000)
+  }).timeout(6000000)
   
   it("check verifier for valid proof for Withdrawal", ()=>{
     const name = 'Withdrawal';
@@ -139,6 +138,6 @@ describe("zkSNARK", ()=>{
     const inputs = getWithdrawalInputs(tx);
     const proofData = proof(inputs, name);
     assert(verify(proofData, name), "Proof is invalid.")
-  }).timeout(120000)
+  }).timeout(6000000)
 
 });
