@@ -3,6 +3,12 @@ const snarkjs = require("snarkjs");
 const fs = require("fs");
 const {groth, Circuit, bigInt} = snarkjs;
 
+const {stringifyBigInts, unstringifyBigInts} = require("snarkjs/src/stringifybigint");
+
+const {buildGroth16} = require("websnark");
+const buildpkey = require("./buildpkey.js");
+const buildwitness = require("./buildwitness.js");
+
 const babyJub = circomlib.babyJub;
 const getBasePoint = circomlib.pedersenHash.getBasePoint;
 
@@ -107,30 +113,26 @@ function rand256() {
   return n % (1n<<256n);
 }
 
-function unstringifyBigInts(o) {
-  if ((typeof(o) == "string") && (/^[0-9]+$/.test(o) ))  {
-      return BigInt(o);
-  } else if (Array.isArray(o)) {
-      return o.map(unstringifyBigInts);
-  } else if (typeof o == "object") {
-      const res = {};
-      for (let k in o) {
-          res[k] = unstringifyBigInts(o[k]);
-      }
-      return res;
-  } else {
-      return o;
-  }
-}
+
 
 const fload = f=>unstringifyBigInts(JSON.parse(fs.readFileSync(f)))
 
 
-function proof(input, name) {
+let wasmgroth=undefined;
+
+async function proof(input, name) {
+  if (typeof(wasmgroth)==="undefined") {
+    wasmgroth = await buildGroth16();
+  }
+
   const circuit = new Circuit(fload(`./circuitsCompiled/${name}.json`));
   const pk = fload(`./circuitsCompiled/${name}_pk.json`);
   const witness = circuit.calculateWitness(input);
-  return groth.genProof(pk, witness);
+  const proof = unstringifyBigInts(await wasmgroth.proof(buildwitness(witness), buildpkey(pk)));
+  proof.protocol="groth";
+
+  return {proof, publicSignals:witness.slice(1, pk.nPublic+1)};
+  //return groth.genProof(pk, witness);
 }
 
 function verify({proof, publicSignals}, name){
@@ -139,4 +141,4 @@ function verify({proof, publicSignals}, name){
 }
 
 
-module.exports = {UTXOhasher, compress253, hash, hash253, compress, rand256, fload, proof, verify};
+module.exports = {stringifyBigInts, unstringifyBigInts, UTXOhasher, compress253, hash, hash253, compress, rand256, fload, proof, verify};

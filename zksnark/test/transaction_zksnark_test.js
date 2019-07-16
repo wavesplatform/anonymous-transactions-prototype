@@ -1,6 +1,6 @@
 const assert = require("assert");
 const {babyJub} = require("circomlib");
-const {rand256, proof, verify, hash253, UTXOhasher, compress} = require("../src/utils.js");
+const {stringifyBigInts, unstringifyBigInts, rand256, proof, verify, hash253, UTXOhasher, compress} = require("../src/utils.js");
 
 const P = babyJub.p;
 
@@ -106,38 +106,43 @@ describe("zkSNARK", ()=>{
   }
 
 
-  it("check verifier for valid proof for Deposit", ()=>{
+  it("check verifier for valid proof for Deposit", async ()=>{
     const name = 'Deposit';
     const utxo = createTestUtxo();
     const inputs = getDepositInputs(utxo);
-    const proofData = proof(inputs, name);
-    assert(verify(proofData, name), "Proof is invalid.")
+    const proofData = await proof(inputs, name);
+    assert(verify(proofData, name), "Proof is invalid.");
+
+  
   }).timeout(120000)
 
 
-  it("check verifier for valid proof for Transfer 2to2", ()=>{
+  it("check verifier for valid proof for Transfer 2to2", async ()=>{
     const name = 'Transfer';
     const tx = createTestTransfer2to2();
     const inputs = getTransferInputs(tx);
-    const proofData = proof(inputs, name);
+    const proofData = await proof(inputs, name);
     assert(verify(proofData, name), "Proof is invalid.")
   }).timeout(6000000)
 
-  it("check verifier for valid proof for Transfer 1to2", ()=>{
+  it("check verifier for valid proof for Transfer 1to2", async ()=>{
     const name = 'Transfer';
     const tx = createTestTransfer1to2();
     const inputs = getTransferInputs(tx);
   
-    const proofData = proof(inputs, name);
+    const proofData = await proof(inputs, name);
     assert(verify(proofData, name), "Proof is invalid.")
   }).timeout(6000000)
   
-  it("check verifier for valid proof for Withdrawal", ()=>{
+  it("check verifier for valid proof for Withdrawal", async ()=>{
     const name = 'Withdrawal';
     const tx = createTestWithdrawal();
     const inputs = getWithdrawalInputs(tx);
-    const proofData = proof(inputs, name);
+    const proofData = await proof(inputs, name);
     assert(verify(proofData, name), "Proof is invalid.")
   }).timeout(6000000)
 
+  after(function() {
+    process.exit();
+  });
 });
