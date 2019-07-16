@@ -4,10 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "compileDeposit": "node --max-old-space-size=4096 node_modules/circom/cli.js circuits/Deposit.circom -o circuitsCompiled/Deposit.json",
-    "compileTransfer": "node --max-old-space-size=4096 node_modules/circom/cli.js circuits/Transfer.circom -o circuitsCompiled/Transfer.json",
-    "compileWithdrawal": "node --max-old-space-size=4096 node_modules/circom/cli.js circuits/Withdrawal.circom -o circuitsCompiled/Withdrawal.json"
+    "test": "node node_modules/mocha/bin/mocha test/transaction_zksnark_test.js",
+    "compile": "node node_modules/circom/cli.js circuits/Deposit.circom -o circuitsCompiled/Deposit.json && node node_modules/circom/cli.js circuits/Transfer.circom -o circuitsCompiled/Transfer.json && node node_modules/circom/cli.js circuits/Withdrawal.circom -o circuitsCompiled/Withdrawal.json",
+    "setup": "node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Deposit.json --protocol groth --pk circuitsCompiled/Deposit_pk.json --vk circuitsCompiled/Deposit_vk.json && node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Transfer.json --protocol groth --pk circuitsCompiled/Transfer_pk.json --vk circuitsCompiled/Transfer_vk.json && node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Withdrawal.json --protocol groth --pk circuitsCompiled/Withdrawal_pk.json --vk circuitsCompiled/Withdrawal_vk.json"
   },
   "repository": {
     "type": "git",
@@ -22,6 +21,7 @@
   "dependencies": {
     "@waves/waves-crypto": "^3.0.17",
     "@waves/waves-transactions": "^3.12.1",
+    "assert": "^2.0.0",
     "circom": "^0.0.28",
     "circomlib": "^0.0.9",
     "dotenv": "^6.2.0",

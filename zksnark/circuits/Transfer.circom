@@ -10,34 +10,25 @@ include "../node_modules/circomlib/circuits/comparators.circom";
 
 template Transfer(N, C) {
   signal input in_hashes[N];
-  
-  signal input nullifier[2];
-  signal input out_hash[2];
   signal private input index[2];
-  
-  signal private input balance[4];
-  signal private input in_secret[2];
-  signal private input out_entropy[2];
 
-  signal private input pubkey;
+  signal input nullifier[2];
+  signal private input in_balance[2];
+  signal private input in_secret[2];
+
+  signal input out_hash[2];
+  signal private input out_balance[2];
+  signal private input out_entropy[2];
+  signal private input out_pubkey[2];
+
   signal private input privkey;
   signal private input entropy;
-
-  signal hashes[4];
-  signal secret[4];
 
   component csecret[2];
   for (var i=0;i<2;i++) {
     csecret[i] = Hasher253();
     csecret[i].in <== out_entropy[i];
-  }
-
-  secret[0] <== in_secret[0];
-  secret[1] <== in_secret[1];
-  secret[2] <== csecret[0].out;
-  secret[3] <== csecret[1].out;
-
-  
+  }  
 
   component in_hash[2];
   for (var i=0; i<2; i++) {
@@ -48,49 +39,50 @@ template Transfer(N, C) {
     }
   }
 
-  for (var i=0; i<2; i++) {
-    hashes[i] <== in_hash[i].out;
-  }
-
-  for (var i=0; i<2; i++) {
-    hashes[2+i] <== out_hash[i];
-  }
+  component in_pubkey = PubKey();
+  in_pubkey.in <== privkey;
 
   component utxohash[4];
 
   for (var i=0; i<4; i++) {
     utxohash[i] = UTXOHasher();
-    utxohash[i].balance <== balance[i];
-    utxohash[i].pubkey <== pubkey;
-    utxohash[i].secret <== secret[i];
-    hashes[i] === utxohash[i].out;
+    if (i<2) {
+      utxohash[i].balance <== in_balance[i];
+      utxohash[i].pubkey <== in_pubkey.out;
+      utxohash[i].secret <== in_secret[i];
+      utxohash[i].out === in_hash[i].out;
+    }
+    else {
+      utxohash[i].balance <== out_balance[i-2];
+      utxohash[i].pubkey <== out_pubkey[i-2];
+      utxohash[i].secret <== csecret[i-2].out;
+      utxohash[i].out === out_hash[i-2];
+    }
   }
 
   component are_inputs_same = IsZero();
-  are_inputs_same.in <== hashes[0]-hashes[1];
+  are_inputs_same.in <== in_hash[0].out-in_hash[1].out;
 
   
-  component cpubkey = PubKey();
-  cpubkey.in <== privkey;
-  cpubkey.out === pubkey;
+
 
   component cnullifier[2];
 
   for(var i=0; i<2; i++) {
     cnullifier[i] = Compressor();
     cnullifier[i].in[0] <== privkey;
-    cnullifier[i].in[1] <== secret[i];
+    cnullifier[i].in[1] <== in_secret[i];
   }
 
 
   component replacement_nullifier = Compressor();
-  replacement_nullifier.in[0] <== nullifier[0];
+  replacement_nullifier.in[0] <== privkey;
   replacement_nullifier.in[1] <== entropy;
 
   nullifier[0] === cnullifier[0].out;
   nullifier[1] === cnullifier[1].out + (replacement_nullifier.out - cnullifier[1].out) * are_inputs_same.out;
 
-  balance[0] + balance[1] * (1 - are_inputs_same.out) === balance[2] + balance[3] + C;
+  in_balance[0] + in_balance[1] * (1 - are_inputs_same.out) === out_balance[0] + out_balance[1] + C;
 
 }
 

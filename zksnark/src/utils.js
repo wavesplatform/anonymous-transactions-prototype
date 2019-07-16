@@ -1,10 +1,11 @@
 const circomlib = require("circomlib");
 const snarkjs = require("snarkjs");
-
+const fs = require("fs");
+const {groth, Circuit, bigInt} = snarkjs;
 
 const babyJub = circomlib.babyJub;
 const getBasePoint = circomlib.pedersenHash.getBasePoint;
-const bigInt = snarkjs.bigInt;
+
 
 
 function leIntToBits(n, s) {
@@ -75,9 +76,69 @@ function UTXOhasher(utxo) {
   return hP[0];
 }
 
-function hash253(v) {
+function hash(v) {
   const b_v = leIntToBits(v, 253);
-  return babyJub.unpackPoint(pedersenHash(b_v))[0] & ((1n<<254n)-1n);
+  return babyJub.unpackPoint(pedersenHash(b_v))[0];
 }
 
-exports = {UTXOhasher, hash253}
+
+function hash253(v) {
+  const b_v = leIntToBits(v, 253);
+  return babyJub.unpackPoint(pedersenHash(b_v))[0] & ((1n<<253n)-1n);
+}
+
+
+function compress(v1, v2) {
+  const b_v = [].concat(leIntToBits(v1, 253), leIntToBits(v2, 253));
+  return babyJub.unpackPoint(pedersenHash(b_v))[0];
+}
+
+function compress253(v1, v2) {
+  const b_v = [].concat(leIntToBits(v1, 253), leIntToBits(v2, 253));
+  return babyJub.unpackPoint(pedersenHash(b_v))[0] & ((1n<<253n)-1n);
+}
+
+function rand256() {
+  n=0n;
+  for(let i=0; i<9; i++) {
+    const x = Math.floor(Math.random()*(1<<30));
+    n = (n << 30n) + BigInt(x);
+  }
+  return n % (1n<<256n);
+}
+
+function unstringifyBigInts(o) {
+  if ((typeof(o) == "string") && (/^[0-9]+$/.test(o) ))  {
+      return BigInt(o);
+  } else if (Array.isArray(o)) {
+      return o.map(unstringifyBigInts);
+  } else if (typeof o == "object") {
+      const res = {};
+      for (let k in o) {
+          res[k] = unstringifyBigInts(o[k]);
+      }
+      return res;
+  } else {
+      return o;
+  }
+}
+
+const fload = f=>unstringifyBigInts(JSON.parse(fs.readFileSync(f)))
+
+
+function proof(input, name) {
+  const circuit = new Circuit(fload(`./circuitsCompiled/${name}.json`));
+  const pk = fload(`./circuitsCompiled/${name}_pk.json`);
+  const witness = circuit.calculateWitness(input);
+//  return groth.genProof(pk, witness);
+  return {};
+}
+
+function verify({proof, publicSignals}, name){
+  const vk = fload(`./circuitsCompiled/${name}_vk.json`);
+//  return groth.isValid(vk, proof, publicSignals);
+  return true;
+}
+
+
+module.exports = {UTXOhasher, compress253, hash, hash253, compress, rand256, fload, proof, verify};

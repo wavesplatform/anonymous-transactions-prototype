@@ -14,8 +14,6 @@ template Withdrawal(N) {
   
   signal private input balance;
   signal private input secret;
-
-  signal private input pubkey;
   signal private input privkey;
 
   component null_receiver = IsZero();
@@ -29,21 +27,17 @@ template Withdrawal(N) {
     in_hash.in[j] <== in_hashes[j];
   }
 
+  component cpubkey = PubKey();
+  cpubkey.in <== privkey;
 
   component utxohash = UTXOHasher();
 
   utxohash.balance <== balance;
-  utxohash.pubkey <== pubkey;
+  utxohash.pubkey <== cpubkey.out;
   utxohash.secret <== secret;
 
   utxohash.out === in_hash.out;
 
-
-
-  
-  component cpubkey = PubKey();
-  cpubkey.in <== privkey;
-  cpubkey.out === pubkey;
 
   component cnullifier = Compressor();
   cnullifier.in[0] <== privkey;
