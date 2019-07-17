@@ -9,10 +9,9 @@ template Withdrawal(N) {
   signal input in_hashes[N];
   signal input nullifier;
   signal input receiver;
+  signal input balance;
 
   signal private input index;
-  
-  signal private input balance;
   signal private input secret;
   signal private input privkey;
 
