@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node node_modules/mocha/bin/mocha test/transaction_zksnark_test.js",
+    "test": "node node_modules/mocha/bin/mocha --exit test/transaction_zksnark_test.js",
     "compile": "node node_modules/circom/cli.js circuits/Deposit.circom -o circuitsCompiled/Deposit.json && node node_modules/circom/cli.js circuits/Transfer.circom -o circuitsCompiled/Transfer.json && node node_modules/circom/cli.js circuits/Withdrawal.circom -o circuitsCompiled/Withdrawal.json",
     "setup": "node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Deposit.json --protocol groth --pk circuitsCompiled/Deposit_pk.json --vk circuitsCompiled/Deposit_vk.json && node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Transfer.json --protocol groth --pk circuitsCompiled/Transfer_pk.json --vk circuitsCompiled/Transfer_vk.json && node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Withdrawal.json --protocol groth --pk circuitsCompiled/Withdrawal_pk.json --vk circuitsCompiled/Withdrawal_vk.json"
   },

@@ -142,7 +142,4 @@ describe("zkSNARK", ()=>{
     assert(verify(proofData, name), "Proof is invalid.")
   }).timeout(6000000)
 
-  after(function() {
-    process.exit();
-  });
 });

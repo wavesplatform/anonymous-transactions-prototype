@@ -7,6 +7,8 @@ let depositVK=base58''
 let withdrawalVK=base58''
 let transferVK=base58''
 
+let fee = 900000
+
 func groth16Verify(vk:ByteVector, proof:ByteVector, inputs:ByteVector) = {
     true
 }
@@ -19,7 +21,7 @@ func takeLR(v:ByteVector, from:Int, to:Int) = {
 func getUtxoKey(utxo:ByteVector) = "U:"+toBase58String(utxo)
 
 
-func getSecretKey(owner:ByteVector, secret:ByteVector) = "S:"+toBase58String(keccak256(owner+secret))
+func getNullifierKey(nullifier:ByteVector) = "N:"+toBase58String(nullifier)
 
 func flagExists(key:String) = {
     match getBoolean(this, key) {
@@ -33,62 +35,18 @@ func flagNotExists(key:String) = !flagExists(key)
 
 # Withdrawal input structure
 # public:
-#   hash     256
-#   balance   64
-#   secret   160
-#   owner    208
+#   in_hashes[16]      254
+#   nullifier          254
+#   receiver           208
+#   in_balance          64
 # private:
-#   salt      80 
-
-@Callable(i)
-func withdrawal(msg:ByteVector, sig:ByteVector, pub:ByteVector) = {
-    let proof = take(msg, 256);
-    let v = takeRight(msg, 96);
-    let hash = take(v, 32)
-    let balance = toInt(v, 32 + 3*8)
-    let secret = takeLR(v, 64, 96)
-    let owner = addressFromPublicKey(pub).bytes
-    let v2 = v + base58'111111' + owner
-    let secretKey = getSecretKey(owner, secret)
-    
-    if (i.caller!=this) then
-        throw("wrong caller")
-    else if (!sigVerify(msg, sig, pub)) then 
-        throw("wrong signature")
-    else if (flagExists(secretKey)) then 
-        throw("doublespend detected")
-    else if (flagNotExists(getUtxoKey(hash))) then
-        throw("utxo not exists")
-    else if (!groth16Verify(withdrawalVK, proof, v2)) then 
-        throw("wrong proof")
-    else
-        ScriptResult(
-            WriteSet([DataEntry(secretKey, true)]),
-            TransferSet([ScriptTransfer(Address(owner), balance, unit)])
-        )
-}
-
-
-# Transfer input structure
-# public:
-#   in_hashes[8]       256
-#   out_hashes[2]      256
-#   in_secrets[2]      160
-#   owner              208
-# private:
-#   in_selectors[2][8]
-#   in_balances[2]      64
-#   in_salts[2]         80
-#   out_balance[2]      64
-#   out_secrets[2]     160
-#   out_salt[2]         80
-#   out_owner[2]       208
+#   index              254
+#   in_secret          253
+#   privkey            253
 
 
 @Callable(i)
-func transfer(msg:ByteVector, sig:ByteVector, pub:ByteVector) = {
-    let proof = take(msg, 256);
-    let v = takeRight(msg, 320);
+func withdrawal(proof:ByteVector, v:ByteVector) = {
     let uk0 = getUtxoKey(takeLR(v, 0, 32))
     let uk1 = getUtxoKey(takeLR(v, 32, 64))
     let uk2 = getUtxoKey(takeLR(v, 64, 96))
@@ -97,49 +55,111 @@ func transfer(msg:ByteVector, sig:ByteVector, pub:ByteVector) = {
     let uk5 = getUtxoKey(takeLR(v, 160, 192))
     let uk6 = getUtxoKey(takeLR(v, 192, 224))
     let uk7 = getUtxoKey(takeLR(v, 224, 256))
-    let ouk0 = getUtxoKey(takeLR(v, 256, 288))
-    let ouk1 = getUtxoKey(takeLR(v, 288, 320))
-    let owner = addressFromPublicKey(pub).bytes
-    let v2 = v + base58'111111' + owner
+    let uk8 = getUtxoKey(takeLR(v, 256, 288))
+    let uk9 = getUtxoKey(takeLR(v, 288, 320))
+    let uk10 = getUtxoKey(takeLR(v, 320, 352))
+    let uk11 = getUtxoKey(takeLR(v, 352, 384))
+    let uk12 = getUtxoKey(takeLR(v, 384, 416))
+    let uk13 = getUtxoKey(takeLR(v, 416, 448))
+    let uk14 = getUtxoKey(takeLR(v, 448, 480))
+    let uk15 = getUtxoKey(takeLR(v, 480, 512))
+    let n = getNullifierKey(takeLR(v, 512, 544))
+    let recv = Address(takeLR(v, 544, 576))
+    let balance = toInt(v, 576 + 3*8)
 
-    let osk0 = getSecretKey(owner, takeLR(v, 320, 352))
-    let osk1 = getSecretKey(owner, takeLR(v, 352, 384))
     
     if (i.caller!=this) then
         throw("wrong caller")
-    else if (!sigVerify(msg, sig, pub)) then 
-        throw("wrong signature")
-    else if (flagExists(osk0) || flagExists(osk1)) then 
+    else if (balance < fee) then
+        throw("balance must be more then fee")
+    else if (flagExists(n)) then 
         throw("doublespend detected")
-    else if (flagNotExists(uk0) || flagNotExists(uk1) || flagNotExists(uk2) || flagNotExists(uk3) || flagNotExists(uk4) || flagNotExists(uk5) || flagNotExists(uk6) || flagNotExists(uk7)) then
+    else if (flagNotExists(uk0) || flagNotExists(uk1) || flagNotExists(uk2) || flagNotExists(uk3) || flagNotExists(uk4) || flagNotExists(uk5) || flagNotExists(uk6) || flagNotExists(uk7)||flagNotExists(uk8) || flagNotExists(uk9) || flagNotExists(uk10) || flagNotExists(uk11) || flagNotExists(uk12) || flagNotExists(uk13) || flagNotExists(uk14) || flagNotExists(uk15)) then
+        throw("input utxo not exists")
+    else if (!groth16Verify(transferVK, proof, v)) then 
+        throw("wrong proof")
+    else
+        ScriptResult(
+            WriteSet([DataEntry(n, true)]),
+            TransferSet([ScriptTransfer(recv, balance, unit)])
+        )
+}
+
+
+
+# Transfer input structure
+# public:
+#   in_hashes[16]      254
+#   nullifier[2]       254
+#   out_hash[2]        254
+# private:
+#   index[2]           254
+#   in_balance[2]       64
+#   in_secret[2]       253
+#   out_balance[2]      64
+#   out_entropy[2]     253
+#   out_pubkey[2]      253
+#   privkey            253
+#   entropy            253
+
+
+@Callable(i)
+func transfer(proof:ByteVector, v:ByteVector) = {
+    let uk0 = getUtxoKey(takeLR(v, 0, 32))
+    let uk1 = getUtxoKey(takeLR(v, 32, 64))
+    let uk2 = getUtxoKey(takeLR(v, 64, 96))
+    let uk3 = getUtxoKey(takeLR(v, 96, 128))
+    let uk4 = getUtxoKey(takeLR(v, 128, 160))
+    let uk5 = getUtxoKey(takeLR(v, 160, 192))
+    let uk6 = getUtxoKey(takeLR(v, 192, 224))
+    let uk7 = getUtxoKey(takeLR(v, 224, 256))
+    let uk8 = getUtxoKey(takeLR(v, 256, 288))
+    let uk9 = getUtxoKey(takeLR(v, 288, 320))
+    let uk10 = getUtxoKey(takeLR(v, 320, 352))
+    let uk11 = getUtxoKey(takeLR(v, 352, 384))
+    let uk12 = getUtxoKey(takeLR(v, 384, 416))
+    let uk13 = getUtxoKey(takeLR(v, 416, 448))
+    let uk14 = getUtxoKey(takeLR(v, 448, 480))
+    let uk15 = getUtxoKey(takeLR(v, 480, 512))
+    let n0 = getNullifierKey(takeLR(v, 512, 544))
+    let n1 = getNullifierKey(takeLR(v, 544, 576))
+    let ouk0 = getUtxoKey(takeLR(v, 576, 608))
+    let ouk1 = getUtxoKey(takeLR(v, 608, 640))
+
+    
+    if (i.caller!=this) then
+        throw("wrong caller")
+    else if (flagExists(n0) || flagExists(n1)) then 
+        throw("doublespend detected")
+    else if (flagNotExists(uk0) || flagNotExists(uk1) || flagNotExists(uk2) || flagNotExists(uk3) || flagNotExists(uk4) || flagNotExists(uk5) || flagNotExists(uk6) || flagNotExists(uk7)||flagNotExists(uk8) || flagNotExists(uk9) || flagNotExists(uk10) || flagNotExists(uk11) || flagNotExists(uk12) || flagNotExists(uk13) || flagNotExists(uk14) || flagNotExists(uk15)) then
         throw("input utxo not exists")
     else if (flagExists(ouk0) || flagExists(ouk1)) then
         throw("output utxo alreadyexists")
-    else if (!groth16Verify(transferVK, proof, v2)) then 
+    else if (!groth16Verify(transferVK, proof, v)) then 
         throw("wrong proof")
     else
-        WriteSet([DataEntry(ouk0, true), DataEntry(ouk1, true), DataEntry(osk0, true), DataEntry(osk1, true)])
+        WriteSet([DataEntry(ouk0, true), DataEntry(ouk1, true), DataEntry(n0, true), DataEntry(n1, true)])
 }
 
 
 
 # Deposit input structure
 # public:
-#   hash     256
+#   hash     254
 #   balance   64
 # private:
-#   owner    208
-#   secret   160
-#   salt      80
+#   pubkey   253
+#   entropy  253
 
 @Callable(i)
 func deposit(proof:ByteVector, v:ByteVector) = {
    let pmt = extract(i.payment)
    if (isDefined(pmt.assetId)) then throw("can hodl waves only at the moment")
+   else if(pmt.amount < fee) then throw("amount must be more then fee")
    else {
         let hash= take(v, 32)
-        let balance = pmt.amount
-        let v2 = v + base58'111111111111111111111111'+toBytes(pmt.amount)
+        let balance = pmt.amount - fee
+        let v2 = v + base58'111111111111111111111111'+toBytes(balance)
         let utxoKey = getUtxoKey(hash)
         if (flagExists(utxoKey)) then 
             throw("utxo already exists") 

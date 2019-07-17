@@ -7,17 +7,18 @@ Anonymous assets are Pedersen hashes of UTXO objects with the following structur
 ```
 struct utxo {
    balance:uint64
-   secret:uint160
-   owner:uint208
-   salt:uint80 
+   pubkey:uint253
+   secret:uint153
 }
 ```
 
 Hashes are computed at bn254 curve and presented inside dataset of dApp at Waves blockchain in mapping `hash("U"+utxo) => {true|false}`
 
-Secrets are special codes, allowing us to spend UTXOs. If we spend the UTXO, we do not publish, which utxo is spent, but we publish the secret of spent UTXO at the blockchain. To protect from frontrun attack we need to keep separate independet set of spent secrets for each user (in mapping `hash("S"+sender+secret) => {true|false}`).
+Nullifiers are special codes, allowing us to spend UTXOs. If we spend the UTXO, we do not publish, which utxo is spent, but we publish the nullifier of spent UTXO at the blockchain.  `nullifier = hash(privkey, secret)`.
 
-When we publish transfer or withdrawal, we need to check, that all affected UTXOs belong to sender and the secrets are not spent.
+To protect from frontrun attack we need to keep separate independet set of spent nullifiers.
+
+When we publish transfer or withdrawal, we need to check, that all affected UTXOs belong to sender and the nullifiers are not spent.
 
 ## Actions
 
@@ -32,12 +33,12 @@ Deposits are usual invokeScript transactions.
 #### zkSNARK
 ```
 # public:
-#   hash     256
+#   hash     254
 #   balance   64
 # private:
-#   owner    208
-#   secret   160
-#   salt      80
+#   pubkey   253
+#   entropy  253
+
 ```
 
 #### Ride
@@ -57,18 +58,18 @@ func deposit(proof:ByteVector, v:ByteVector)
 ```
 # Transfer input structure
 # public:
-#   in_hashes[8]       256
-#   out_hashes[2]      256
-#   in_secrets[2]      160
-#   owner              208
+#   in_hashes[16]      254
+#   nullifier[2]       254
+#   out_hash[2]        254
 # private:
-#   in_selectors[2][8]
-#   in_balances[2]      64
-#   in_salts[2]         80
+#   index[2]           254
+#   in_balance[2]       64
+#   in_secret[2]       253
 #   out_balance[2]      64
-#   out_secrets[2]     160
-#   out_salt[2]         80
-#   out_owner[2]       208
+#   out_entropy[2]     253
+#   out_pubkey[2]      253
+#   privkey            253
+#   entropy            253
 ```
 
 #### Ride
@@ -97,12 +98,14 @@ func transfer(msg:ByteVector, sig:ByteVector, pub:ByteVector)
 #### zkSNARK
 ```
 # public:
-#   hash     256
-#   balance   64
-#   secret   160
-#   owner    208
+#   in_hashes[16]      254
+#   nullifier          254
+#   receiver           208
+#   in_balance          64
 # private:
-#   salt      80
+#   index              254
+#   in_secret          253
+#   privkey            253
 ```
 
 #### Ride
