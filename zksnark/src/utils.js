@@ -139,5 +139,29 @@ function verify({ proof, publicSignals }, name) {
   return groth.isValid(vk, proof, publicSignals);
 }
 
+const g1ToBuff = (p) => Buffer.concat([bigInt.beInt2Buff(p[0], 32), bigInt.beInt2Buff(p[1], 32)]);
+const g2ToBuff = (p) => Buffer.concat([bigInt.beInt2Buff(p[0][0], 32), bigInt.beInt2Buff(p[0][1], 32), bigInt.beInt2Buff(p[1][0], 32), bigInt.beInt2Buff(p[1][1], 32)]);
+const serializeVK = (vk) => Buffer.concat([g1ToBuff(vk.vk_alfa_1), ...[vk.vk_beta_2, vk.vk_gamma_2, vk.vk_delta_2].map(g2ToBuff), ...vk.IC.map(g1ToBuff)]);
+const serializeProof = (proof) => Buffer.concat([g1ToBuff(proof.pi_a), g2ToBuff(proof.pi_b), g1ToBuff(proof.pi_c)]);
+const serializeInputs = (inputs) => Buffer.concat(inputs.map(x => bigInt.beInt2Buff(x, 32)));
 
-module.exports = { stringifyBigInts, unstringifyBigInts, UTXOhasher, compress253, hash, hash253, compress, rand256, fload, proof, verify };
+
+
+module.exports = {
+  stringifyBigInts,
+  unstringifyBigInts,
+  UTXOhasher,
+  compress253,
+  hash,
+  hash253,
+  compress,
+  rand256,
+  fload,
+  proof,
+  verify,
+  g1ToBuff,
+  g2ToBuff,
+  serializeVK,
+  serializeProof,
+  serializeInputs
+};

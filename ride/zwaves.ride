@@ -9,10 +9,6 @@ let transferVK=base58''
 
 let fee = 900000
 
-func groth16Verify(vk:ByteVector, proof:ByteVector, inputs:ByteVector) = {
-    true
-}
-
 
 func takeLR(v:ByteVector, from:Int, to:Int) = {
     takeRight(take(v, to), to-from)
@@ -81,7 +77,7 @@ func withdrawal(proof:ByteVector, v:ByteVector) = {
     else
         ScriptResult(
             WriteSet([DataEntry(n, true)]),
-            TransferSet([ScriptTransfer(recv, balance, unit)])
+            TransferSet([ScriptTransfer(recv, balance-fee, unit)])
         )
 }
 
