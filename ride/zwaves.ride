@@ -26,6 +26,15 @@ func flagExists(key:String) = {
     }
 }
 
+func getMessageNum() = {
+    match getInteger(this, "MESSAGE_NUM") {
+        case a:Int => a
+        case _ => 0
+    }
+}
+
+func getMessageKey(n:Int) = "M:"+toString(n)
+
 func flagNotExists(key:String) = !flagExists(key)
 
 
@@ -51,17 +60,20 @@ func withdrawal(proof:ByteVector, v:ByteVector) = {
     let uk5 = getUtxoKey(takeLR(v, 160, 192))
     let uk6 = getUtxoKey(takeLR(v, 192, 224))
     let uk7 = getUtxoKey(takeLR(v, 224, 256))
-    let uk8 = getUtxoKey(takeLR(v, 256, 288))
-    let uk9 = getUtxoKey(takeLR(v, 288, 320))
-    let uk10 = getUtxoKey(takeLR(v, 320, 352))
-    let uk11 = getUtxoKey(takeLR(v, 352, 384))
-    let uk12 = getUtxoKey(takeLR(v, 384, 416))
-    let uk13 = getUtxoKey(takeLR(v, 416, 448))
-    let uk14 = getUtxoKey(takeLR(v, 448, 480))
-    let uk15 = getUtxoKey(takeLR(v, 480, 512))
-    let n = getNullifierKey(takeLR(v, 512, 544))
-    let recv = Address(takeLR(v, 544, 576))
-    let balance = toInt(v, 576 + 3*8)
+    # let uk8 = getUtxoKey(takeLR(v, 256, 288))
+    # let uk9 = getUtxoKey(takeLR(v, 288, 320))
+    # let uk10 = getUtxoKey(takeLR(v, 320, 352))
+    # let uk11 = getUtxoKey(takeLR(v, 352, 384))
+    # let uk12 = getUtxoKey(takeLR(v, 384, 416))
+    # let uk13 = getUtxoKey(takeLR(v, 416, 448))
+    # let uk14 = getUtxoKey(takeLR(v, 448, 480))
+    # let uk15 = getUtxoKey(takeLR(v, 480, 512))
+    # let n = getNullifierKey(takeLR(v, 512, 544))
+    # let recv = Address(takeLR(v, 544, 576))
+    # let balance = toInt(v, 576 + 3*8)
+    let n = getNullifierKey(takeLR(v, 256, 288))
+    let recv = Address(takeLR(v, 288, 320))
+    let balance = toInt(v, 320 + 3*8)
 
     
     if (i.caller!=this) then
@@ -70,9 +82,10 @@ func withdrawal(proof:ByteVector, v:ByteVector) = {
         throw("balance must be more then fee")
     else if (flagExists(n)) then 
         throw("doublespend detected")
-    else if (flagNotExists(uk0) || flagNotExists(uk1) || flagNotExists(uk2) || flagNotExists(uk3) || flagNotExists(uk4) || flagNotExists(uk5) || flagNotExists(uk6) || flagNotExists(uk7)||flagNotExists(uk8) || flagNotExists(uk9) || flagNotExists(uk10) || flagNotExists(uk11) || flagNotExists(uk12) || flagNotExists(uk13) || flagNotExists(uk14) || flagNotExists(uk15)) then
+#    else if (flagNotExists(uk0) || flagNotExists(uk1) || flagNotExists(uk2) || flagNotExists(uk3) || flagNotExists(uk4) || flagNotExists(uk5) || flagNotExists(uk6) || flagNotExists(uk7)||flagNotExists(uk8) || flagNotExists(uk9) || flagNotExists(uk10) || flagNotExists(uk11) || flagNotExists(uk12) || flagNotExists(uk13) || flagNotExists(uk14) || flagNotExists(uk15)) then
+    else if (flagNotExists(uk0) || flagNotExists(uk1) || flagNotExists(uk2) || flagNotExists(uk3) || flagNotExists(uk4) || flagNotExists(uk5) || flagNotExists(uk6) || flagNotExists(uk7)) then
         throw("input utxo not exists")
-    else if (!groth16Verify(transferVK, proof, v)) then 
+    else if (!groth16verify(transferVK, proof, v)) then 
         throw("wrong proof")
     else
         ScriptResult(
@@ -100,7 +113,7 @@ func withdrawal(proof:ByteVector, v:ByteVector) = {
 
 
 @Callable(i)
-func transfer(proof:ByteVector, v:ByteVector) = {
+func transfer(proof:ByteVector, v:ByteVector, m0:ByteVector, m1:ByteVector) = {
     let uk0 = getUtxoKey(takeLR(v, 0, 32))
     let uk1 = getUtxoKey(takeLR(v, 32, 64))
     let uk2 = getUtxoKey(takeLR(v, 64, 96))
@@ -109,32 +122,46 @@ func transfer(proof:ByteVector, v:ByteVector) = {
     let uk5 = getUtxoKey(takeLR(v, 160, 192))
     let uk6 = getUtxoKey(takeLR(v, 192, 224))
     let uk7 = getUtxoKey(takeLR(v, 224, 256))
-    let uk8 = getUtxoKey(takeLR(v, 256, 288))
-    let uk9 = getUtxoKey(takeLR(v, 288, 320))
-    let uk10 = getUtxoKey(takeLR(v, 320, 352))
-    let uk11 = getUtxoKey(takeLR(v, 352, 384))
-    let uk12 = getUtxoKey(takeLR(v, 384, 416))
-    let uk13 = getUtxoKey(takeLR(v, 416, 448))
-    let uk14 = getUtxoKey(takeLR(v, 448, 480))
-    let uk15 = getUtxoKey(takeLR(v, 480, 512))
-    let n0 = getNullifierKey(takeLR(v, 512, 544))
-    let n1 = getNullifierKey(takeLR(v, 544, 576))
-    let ouk0 = getUtxoKey(takeLR(v, 576, 608))
-    let ouk1 = getUtxoKey(takeLR(v, 608, 640))
+    # let uk8 = getUtxoKey(takeLR(v, 256, 288))
+    # let uk9 = getUtxoKey(takeLR(v, 288, 320))
+    # let uk10 = getUtxoKey(takeLR(v, 320, 352))
+    # let uk11 = getUtxoKey(takeLR(v, 352, 384))
+    # let uk12 = getUtxoKey(takeLR(v, 384, 416))
+    # let uk13 = getUtxoKey(takeLR(v, 416, 448))
+    # let uk14 = getUtxoKey(takeLR(v, 448, 480))
+    # let uk15 = getUtxoKey(takeLR(v, 480, 512))
+    # let n0 = getNullifierKey(takeLR(v, 512, 544))
+    # let n1 = getNullifierKey(takeLR(v, 544, 576))
+    # let ouk0 = getUtxoKey(takeLR(v, 576, 608))
+    # let ouk1 = getUtxoKey(takeLR(v, 608, 640))
 
+    let n0 = getNullifierKey(takeLR(v, 256, 288))
+    let n1 = getNullifierKey(takeLR(v, 288, 320))
+    let ouk0 = getUtxoKey(takeLR(v, 320, 352))
+    let ouk1 = getUtxoKey(takeLR(v, 352, 384))
+
+    let mn = getMessageNum()
     
     if (i.caller!=this) then
         throw("wrong caller")
     else if (flagExists(n0) || flagExists(n1)) then 
         throw("doublespend detected")
-    else if (flagNotExists(uk0) || flagNotExists(uk1) || flagNotExists(uk2) || flagNotExists(uk3) || flagNotExists(uk4) || flagNotExists(uk5) || flagNotExists(uk6) || flagNotExists(uk7)||flagNotExists(uk8) || flagNotExists(uk9) || flagNotExists(uk10) || flagNotExists(uk11) || flagNotExists(uk12) || flagNotExists(uk13) || flagNotExists(uk14) || flagNotExists(uk15)) then
+#    else if (flagNotExists(uk0) || flagNotExists(uk1) || flagNotExists(uk2) || flagNotExists(uk3) || flagNotExists(uk4) || flagNotExists(uk5) || flagNotExists(uk6) || flagNotExists(uk7)||flagNotExists(uk8) || flagNotExists(uk9) || flagNotExists(uk10) || flagNotExists(uk11) || flagNotExists(uk12) || flagNotExists(uk13) || flagNotExists(uk14) || flagNotExists(uk15)) then
+    else if (flagNotExists(uk0) || flagNotExists(uk1) || flagNotExists(uk2) || flagNotExists(uk3) || flagNotExists(uk4) || flagNotExists(uk5) || flagNotExists(uk6) || flagNotExists(uk7)) then
         throw("input utxo not exists")
     else if (flagExists(ouk0) || flagExists(ouk1)) then
         throw("output utxo alreadyexists")
-    else if (!groth16Verify(transferVK, proof, v)) then 
+    else if (!groth16verify(transferVK, proof, v)) then 
         throw("wrong proof")
     else
-        WriteSet([DataEntry(ouk0, true), DataEntry(ouk1, true), DataEntry(n0, true), DataEntry(n1, true)])
+        WriteSet([DataEntry(ouk0, true), 
+            DataEntry(ouk1, true), 
+            DataEntry(n0, true), 
+            DataEntry(n1, true), 
+            DataEntry("MESSAGE_NUM", mn+2),
+            DataEntry(getMessageKey(mn), m0),
+            DataEntry(getMessageKey(mn), m1)
+        ])
 }
 
 
@@ -148,8 +175,9 @@ func transfer(proof:ByteVector, v:ByteVector) = {
 #   entropy  253
 
 @Callable(i)
-func deposit(proof:ByteVector, v:ByteVector) = {
+func deposit(proof:ByteVector, v:ByteVector, m:ByteVector) = {
    let pmt = extract(i.payment)
+    let mn = getMessageNum()
    if (isDefined(pmt.assetId)) then throw("can hodl waves only at the moment")
    else if(pmt.amount < fee) then throw("amount must be more then fee")
    else {
@@ -159,10 +187,12 @@ func deposit(proof:ByteVector, v:ByteVector) = {
         let utxoKey = getUtxoKey(hash)
         if (flagExists(utxoKey)) then 
             throw("utxo already exists") 
-        else if (!groth16Verify(depositVK, proof, v2)) then 
+        else if (!groth16verify(depositVK, proof, v2)) then 
             throw("wrong proof")
         else
-            WriteSet([DataEntry(utxoKey, true)])  
+            WriteSet([DataEntry(utxoKey, true), 
+            DataEntry("MESSAGE_NUM", mn+1),
+            DataEntry(getMessageKey(mn), m)])  
    }
 }
 

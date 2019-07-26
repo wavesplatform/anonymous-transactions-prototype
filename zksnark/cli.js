@@ -14,6 +14,8 @@ Key serializing comand
   `).alias("c", "circuit")
   .argv;
 
+
+
 if (argv._[0].toLowerCase() == "serializevk") {
   console.log(JSON.stringify({ vk: base58Encode(serializeVK(fload(argv.circuit))) }));
 }

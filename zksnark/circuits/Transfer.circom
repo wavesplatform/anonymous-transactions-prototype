@@ -86,4 +86,4 @@ template Transfer(N, C) {
 
 }
 
-component main = Transfer(16, 900000);
+component main = Transfer(8, 900000);

@@ -19,9 +19,7 @@
   "dependencies": {
     "@waves/waves-crypto": "^3.0.17",
     "@waves/waves-transactions": "^3.12.1",
-    "circom": "0.0.30",
     "dotenv": "^6.2.0",
-    "node-fetch": "^2.6.0",
-    "snarkjs": "^0.1.14"
+    "node-fetch": "^2.6.0"
   }
 }
