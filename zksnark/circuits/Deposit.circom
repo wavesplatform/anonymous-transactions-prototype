@@ -5,8 +5,8 @@ include "./utils/UTXOHasher.circom";
 
 
 template Deposit() {
-  signal input balance;
   signal input hash;
+  signal input balance;
   signal private input pubkey;
   signal private input entropy;
 

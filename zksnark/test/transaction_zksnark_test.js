@@ -1,8 +1,9 @@
 const assert = require("assert");
 const {babyJub} = require("circomlib");
-const {stringifyBigInts, unstringifyBigInts, rand256, proof, verify, hash253, UTXOhasher, compress} = require("../src/utils.js");
+const {rand256, proof, verify, hash253, UTXOhasher, compress, getDepositInputs} = require("../src/utils.js");
 
 const P = babyJub.p;
+const ANONYMITY_SET=8;
 
 describe("zkSNARK", ()=>{
 
@@ -26,13 +27,12 @@ describe("zkSNARK", ()=>{
     return {hash, balance, pubkey, entropy, secret, privkey, nullifier};
   };
 
-  const getDepositInputs = ({hash, balance, pubkey, entropy}) => ({hash, balance, pubkey, entropy})
 
 
   const createTestTransfer2to2 = () => {
     const privkey = createPrivkey();
     const index = [Math.floor(Math.random()*8), 8+Math.floor(Math.random()*8)]
-    const in_utxo = Array(16).fill(0).map((e,i)=>createTestUtxo((i==index[0]||i==index[1])?privkey: createPrivkey()));
+    const in_utxo = Array(ANONYMITY_SET).fill(0).map((e,i)=>createTestUtxo((i==index[0]||i==index[1])?privkey: createPrivkey()));
     const transfer_balance = in_utxo[index[0]].balance+in_utxo[index[1]].balance - 900000n;
     const _out_balance1 = transfer_balance * BigInt(Math.floor(Math.random()*1000)) / 1000n;
     const out_balance = [_out_balance1, transfer_balance - _out_balance1];
@@ -49,9 +49,9 @@ describe("zkSNARK", ()=>{
 
   const createTestTransfer1to2 = () => {
     const privkey = createPrivkey();
-    const _index = Math.floor(Math.random()*16)
+    const _index = Math.floor(Math.random()*ANONYMITY_SET)
     const index = [_index, _index];
-    const in_utxo = Array(16).fill(0).map((e,i)=>createTestUtxo((i==_index)?privkey: createPrivkey()));
+    const in_utxo = Array(ANONYMITY_SET).fill(0).map((e,i)=>createTestUtxo((i==_index)?privkey: createPrivkey()));
     const transfer_balance = in_utxo[_index].balance - 900000n;
     const _out_balance1 = transfer_balance * BigInt(Math.floor(Math.random()*1000)) / 1000n;
     const out_balance = [_out_balance1, transfer_balance - _out_balance1];
@@ -84,8 +84,8 @@ describe("zkSNARK", ()=>{
 
 
   const createTestWithdrawal = () => {
-    const index = Math.floor(Math.random()*16)
-    const in_utxo = Array(16).fill(0).map(()=>createTestUtxo());
+    const index = Math.floor(Math.random()*ANONYMITY_SET)
+    const in_utxo = Array(ANONYMITY_SET).fill(0).map(()=>createTestUtxo());
     const privkey = in_utxo[index].privkey;
     return {
       in_utxo,

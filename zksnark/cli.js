@@ -2,7 +2,7 @@
 
 const version = require("./package").version;
 const { address, base58Encode } = require("@waves/waves-crypto");
-const { serializeVK, fload } = require("./src/utils.js");
+const { serializeVK, serializeProof, serializeInputs, fload, proof, createUtxo, getDepositInputs, readmsg, stringifyBigInts } = require("./src/utils.js");
 const argv = require("yargs")
   .version(version)
   .usage(`zksnark <command> <options>
@@ -16,6 +16,40 @@ Key serializing comand
 
 
 
-if (argv._[0].toLowerCase() == "serializevk") {
-  console.log(JSON.stringify({ vk: base58Encode(serializeVK(fload(argv.circuit))) }));
-}
+
+
+
+const cmd = argv._[0].toLowerCase();
+(async ()=>{
+  switch(cmd) {
+    case "serializevk":
+      console.log(JSON.stringify({ vk: base58Encode(serializeVK(fload(argv.circuit))) }));
+      break;
+    // echo {"balance":"100", "privkey":"20"} | node cli.js deposit
+    case "deposit":
+      process.stdin.resume();
+      process.stdin.setEncoding('utf8');
+      const msg = await readmsg(process.stdin);
+      const utxo = createUtxo(msg);
+      const inputs = getDepositInputs(utxo);
+      const proofData = await proof(inputs, 'Deposit');
+      console.log(
+        JSON.stringify(
+          stringifyBigInts(
+            {
+              utxo, 
+              proof:serializeProof(proofData.proof).toString("base64"), 
+              inputs:serializeInputs(proofData.publicSignals.slice(0, -1)).toString("base64")
+            }
+          )
+        )
+      );
+      break;
+    case "withdrawal":
+      process.stdin.resume();
+      process.stdin.setEncoding('utf8');
+      const msg = await readmsg(process.stdin);
+
+  }
+  process.exit();
+})();
