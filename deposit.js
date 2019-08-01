@@ -35,25 +35,28 @@ const seed = env.MNEMONIC;
 const rpc = env.WAVES_RPC;
 const chainId = env.WAVES_CHAINID;
 const dApp = env.DAPP;
+const dAppPk = env.DAPPPK;
+
 const fee = 900000;
 
 const utxoCompute = rpcCall("utxoCompute");
 const depositProof = rpcCall("depositProof");
 const withdrawalProof = rpcCall("withdrawalProof");
+const transferProof = rpcCall("transferProof");
 
 const encrypt_utxo = ({balance, pubkey, secret})=>encrypt([balance, pubkey, secret], babyJubJub.decompress(pubkey))
 
 
 
-async function deposit(seed, chainId, balance, pubkey) {
-  const utxo = await utxoCompute({pubkey, balance});
+async function deposit(utxo) {
+  utxo = await utxoCompute(utxo);
   const message = encrypt_utxo(utxo);
   const proofData = await depositProof(utxo);
 
   let tx = invokeScript({
     dApp,
     chainId,
-    payment: [{ amount: Number(balance), assetId: null }],
+    payment: [{ amount: Number(utxo.balance), assetId: null }],
     call: {
       function: "deposit",
       args: [{ type: "binary", value: proofData.proof }, 
@@ -75,7 +78,7 @@ function shuffle(array) {
 }
 
 
-async function withdrawal(seed, chainId, utxo, receiver, db) {
+async function withdrawal(utxo, receiver, db) {
   if (typeof db === "undefined") db = await syncData();
   assert(utxo.hash in db.utxos, "utxo is not present inside db");
   assert(!(utxo.nullifier in db.nullifiers), "utxo is spent");
@@ -86,19 +89,86 @@ async function withdrawal(seed, chainId, utxo, receiver, db) {
     in_hashes.push(all_utxos[Math.floor(Math.random()*all_utxos.length)]);
   }
   shuffle(in_hashes);
-  let index=0;
-  for (; in_hashes[index]!=utxo.hash; index++) {}
+  const index=in_hashes.indexOf(utxo.hash);
   const proofData = await withdrawalProof({in_hashes, receiver, index, ...utxo});
 
-  let tx = invokeScript({
+  const tx = invokeScript({
     dApp,
+    senderPublicKey:dAppPk,
     chainId,
     call: {
       function: "withdrawal",
       args: [{ type: "binary", value: proofData.proof }, 
         { type: "binary", value: proofData.inputs }]
     }, fee
-  }, seed);
+  });
+
+  await broadcast(tx, rpc);
+  await waitForTx(tx.id, { apiBase: rpc });
+
+}
+
+
+//in_hashes, index, nullifier, in_balance, in_secret, out_hash, out_balance, out_entropy, out_pubkey, privkey, entropy
+
+async function transfer(in_utxo, out_utxo, db) {
+  if (typeof db === "undefined") db = await syncData();
+  const in_eq = in_utxo[0].hash === in_utxo[1].hash;
+
+  for (let i in in_utxo) {
+    const utxo = in_utxo[i];
+    assert(utxo.hash in db.utxos, "in_utxo is not present inside db");
+    assert(!(utxo.nullifier in db.nullifiers), "in_utxo is spent");
+  }
+
+  for (let i in out_utxo) {
+    const utxo = out_utxo[i];
+    assert(utxo.balance >= 0n, "out_utxo is negative");
+    assert(!(utxo.nullifier in db.nullifiers), "in_utxo is spent");
+  }
+
+  assert((in_utxo[0].balance + in_utxo[1].balance * (in_eq ? 0n : 1n))===(BigInt(fee)+out_utxo[0].balance+out_utxo[1].balance), 
+    "Sum of input is not equal to sum of output");
+
+  for (let i in out_utxo) {
+    out_utxo[i] = await utxoCompute(out_utxo[i]);
+  }
+
+  const all_utxos = Object.keys(db.utxos).map(BigInt);
+  const in_hashes = [in_utxo[0].hash, in_utxo[1].hash];
+  for (let i=0; i < ANONYMITY_SET-2; i++) {
+    in_hashes.push(all_utxos[Math.floor(Math.random()*all_utxos.length)]);
+  }
+
+  shuffle(in_hashes);
+  const index=in_utxo.map(u=>in_hashes.indexOf(u.hash));
+  const nullifier = in_utxo.map(x=>x.nullifier);
+  const in_balance = in_utxo.map(x=>x.balance);
+  const in_secret = in_utxo.map(x=>x.secret);
+  const out_hash = out_utxo.map(x=>x.hash);
+  const out_balance = out_utxo.map(x=>x.balance);
+  const out_entropy = out_utxo.map(x=>x.entropy);
+  const out_pubkey = out_utxo.map(x=>x.pubkey);
+  const privkey = babyJubJub.privkey(seed);
+  const entropy = rand256() % (1n<<253n);
+
+  const proofData = await transferProof({in_hashes, index, nullifier, in_balance, in_secret, out_hash, out_balance, out_entropy, out_pubkey, privkey, entropy});
+
+  const message = out_utxo.map(encrypt_utxo);
+
+  const tx = invokeScript({
+    dApp,
+    senderPublicKey:dAppPk,
+    chainId,
+    call: {
+      function: "transfer",
+      args: [{ type: "binary", value: proofData.proof }, 
+        { type: "binary", value: proofData.inputs },
+        { type: "binary", value: serializeMessage(message[0]).toString("base64") },
+        { type: "binary", value: serializeMessage(message[1]).toString("base64") }]
+    }, fee
+  });
+
   await broadcast(tx, rpc);
   await waitForTx(tx.id, { apiBase: rpc });
 
@@ -178,12 +248,22 @@ console.log();
 
 (async ()=>{
   const pubkey = babyJubJub.pubkey(seed)[0];
-  await deposit(seed, chainId, 1000000n, pubkey);
+
+  await deposit({balance:1000000n, pubkey});
+  await deposit({balance:1000000n, pubkey});
   let db = await syncData();
+  let in_utxo = Object.values(db.assets).slice(-2);
+  let out_utxo = [{balance: 0n, pubkey}, {balance:2000000n-BigInt(fee), pubkey}];
   console.log(db);
-  await withdrawal(seed, chainId, Object.values(db.assets)[0], address2bigint(dApp), db);
+  await transfer(in_utxo, out_utxo, db);
   db = await syncData();
   console.log(db);
+
+  // let db = await syncData();
+  // console.log(db);
+  // await withdrawal(Object.values(db.assets)[0], address2bigint(dApp), db);
+  // db = await syncData();
+  // console.log(db);
 
   
 

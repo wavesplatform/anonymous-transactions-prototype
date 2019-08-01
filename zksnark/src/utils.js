@@ -222,7 +222,6 @@ module.exports = {
   serializeInputs,
   createUtxo,
   getDepositInputs,
-  createTransfer,
   getTransferInputs,
   getWithdrawalInputs,
   getmsg,
