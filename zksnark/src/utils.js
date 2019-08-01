@@ -1,6 +1,7 @@
 const circomlib = require("circomlib");
 const snarkjs = require("snarkjs");
 const fs = require("fs");
+const {basename} = require("path");
 const { groth, Circuit, bigInt } = snarkjs;
 
 const { stringifyBigInts, unstringifyBigInts } = require("snarkjs/src/stringifybigint");
@@ -125,8 +126,8 @@ async function proof(input, name) {
     wasmgroth = await buildGroth16();
   }
 
-  const circuit = new Circuit(fload(`./circuitsCompiled/${name}.json`));
-  const pk = fload(`./circuitsCompiled/${name}_pk.json`);
+  const circuit = new Circuit(fload(`${__dirname}/../circuitsCompiled/${name}.json`));
+  const pk = fload(`${__dirname}/../circuitsCompiled/${name}_pk.json`);
   const witness = circuit.calculateWitness(input);
   const proof = unstringifyBigInts(await wasmgroth.proof(buildwitness(witness), buildpkey(pk)));
   proof.protocol = "groth";
@@ -146,59 +147,51 @@ const serializeProof = (proof) => Buffer.concat([g1ToBuff(proof.pi_a), g2ToBuff(
 const serializeInputs = (inputs) => Buffer.concat(inputs.map(x => bigInt.beInt2Buff(x, 32)));
 
 
-const createUtxo = ({privkey, pubkey, balance, entropy}) => {
-  entropy = typeof(entropy)!=="undefined" ? entropy : rand256() % (1n<<253n);
-  pubkey = typeof(pubkey)!=="undefined" ? pubkey : babyJub.mulPointEscalar(babyJub.Base8, privkey)[0];
-  const secret = hash253(entropy);
+const createUtxo = ({privkey, pubkey, balance, entropy, secret}) => {
+  entropy = (typeof(entropy)==="undefined") && (typeof(secret)==="undefined") ? rand256() % (1n<<253n) : entropy;
+  pubkey = typeof(pubkey)==="undefined" ?  babyJub.mulPointEscalar(babyJub.Base8, privkey)[0] :pubkey;
+  secret = typeof(secret)==="undefined" ?  hash253(entropy) : secret;
   const hash = UTXOhasher({balance, pubkey, secret});
   const nullifier = typeof(privkey)!=="undefined" ? compress(privkey, secret) : undefined;
   return {hash, balance, pubkey, entropy, secret, privkey, nullifier};
 };
 
 
-const createWithdrawal = ({in_hashes, utxo, receiver, index}) => {
-  const {privkey, balance, secret} = utxo;
-  const nullifier = compress(privkey, secret);
-  return {in_hashes, nullifier, receiver, balance, index, secret, privkey};
-}
+// const createWithdrawal = ({in_hashes, utxo, receiver, index}) => {
+//   const {privkey, balance, secret} = utxo;
+//   const nullifier = compress(privkey, secret);
+//   return {in_hashes, nullifier, receiver, balance, index, secret, privkey};
+// }
 
 
-const createTransfer = ({in_hashes, index, in_utxo, out_utxo, entropy}) => {
-  const privkey = createPrivkey();
-  const index = [Math.floor(Math.random()*8), 8+Math.floor(Math.random()*8)]
-  const in_utxo = Array(ANONYMITY_SET).fill(0).map((e,i)=>createTestUtxo((i==index[0]||i==index[1])?privkey: createPrivkey()));
-  const transfer_balance = in_utxo[index[0]].balance+in_utxo[index[1]].balance - 900000n;
-  const _out_balance1 = transfer_balance * BigInt(Math.floor(Math.random()*1000)) / 1000n;
-  const out_balance = [_out_balance1, transfer_balance - _out_balance1];
-  const out_utxo = Array(2).fill(0).map((e,i)=>createTestUtxo(createPrivkey(), out_balance[i]));
+// const createTransfer = ({in_hashes, index, in_utxo, out_utxo, entropy}) => {
+//   const nullifier = in_utxo.map(x=>compress(x.privkey, x.secret));
+//   const in_balance = in_utxo.map(x=>x.balance);
+//   const in_secret = in_utxo.map(x=>x.secret);
 
-  const nullifier = in_utxo.map(x=>compress(x.privkey, x.secret));
-  const in_balance = in_utxo.map(x=>x.balance);
-  const in_secret = in_utxo.map(x=>x.secret);
+//   const out_hash = out_utxo.map(x=>UTXOhasher({
+//     ...x, 
+//     pubkey:  typeof(x.pubkey)!=="undefined" ? x.pubkey: babyJub.mulPointEscalar(babyJub.Base8, x.privkey)[0]
+//   }));
+//   const out_balance = out_utxo.map(x=>x.balance);
+//   const out_pubkey = out_utxo.map(x=>typeof(x.pubkey)!=="undefined" ? x.pubkey: babyJub.mulPointEscalar(babyJub.Base8, x.privkey)[0]);
+//   const privkey = in_utxo[0].privkey;
+//   entropy = typeof(entropy)!=="undefined" ? entropy : rand256() % (1n<<253n);
 
-  const out_hash = out_utxo.map(x=>UTXOhasher({
-    ...x, 
-    pubkey:  typeof(x.pubkey)!=="undefined" ? x.pubkey: babyJub.mulPointEscalar(babyJub.Base8, x.privkey)[0]
-  }));
-  const out_balance = out_utxo.map(x=>x.balance);
-  const out_pubkey = out_utxo.map(x=>typeof(x.pubkey)!=="undefined" ? x.pubkey: babyJub.mulPointEscalar(babyJub.Base8, x.privkey)[0]);
-  const privkey = in_utxo[0].privkey;
-  entropy = typeof(entropy)!=="undefined" ? entropy : rand256() % (1n<<253n);
-
-  return {
-    in_hashes,
-    index,
-    nullifier,
-    in_balance,
-    in_secret,
-    out_hash,
-    out_balance,
-    out_entropy,
-    out_pubkey,
-    privkey,
-    entropy
-  }
-}
+//   return {
+//     in_hashes,
+//     index,
+//     nullifier,
+//     in_balance,
+//     in_secret,
+//     out_hash,
+//     out_balance,
+//     out_entropy,
+//     out_pubkey,
+//     privkey,
+//     entropy
+//   }
+// }
 
 
 
@@ -207,7 +200,8 @@ const getWithdrawalInputs = ({in_hashes, nullifier, receiver, balance, index, se
 const getTransferInputs = ({in_hashes, index, nullifier, in_balance, in_secret, out_hash, out_balance, out_entropy, out_pubkey, privkey, entropy}) => ({in_hashes, index, nullifier, in_balance, in_secret, out_hash, out_balance, out_entropy, out_pubkey, privkey, entropy});
 
 
-const readmsg = (stdin)=> new Promise(resolve=>stdin.on('data', (x)=>resolve(unstringifyBigInts(JSON.parse(x)))));
+const getmsg = (stdin)=> new Promise(resolve=>((typeof(stdin)==="undefined")? process.stdin: stdin).on('data', (x)=>resolve(unstringifyBigInts(JSON.parse(x)))));
+const postmsg = (msg, stdout)=>((typeof(stdout)==="undefined")?process.stdout: stdout).write(JSON.stringify(stringifyBigInts(msg)));
 
 module.exports = {
   stringifyBigInts,
@@ -229,8 +223,8 @@ module.exports = {
   createUtxo,
   getDepositInputs,
   createTransfer,
-  createWithdrawal,
   getTransferInputs,
   getWithdrawalInputs,
-  readmsg
+  getmsg,
+  postmsg
 };

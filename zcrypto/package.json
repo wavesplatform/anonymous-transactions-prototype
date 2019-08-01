@@ -10,6 +10,8 @@
   "license": "LGPL-3.0",
   "dependencies": {
     "blake2": "^2.0.1",
-    "secure-random": "^1.1.2"
+    "crypto": "^1.0.1",
+    "secure-random": "^1.1.2",
+    "to-regex-range": "^5.0.1"
   }
 }
