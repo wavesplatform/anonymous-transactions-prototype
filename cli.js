@@ -1,7 +1,7 @@
 const axios = require("axios");
 const { broadcast, waitForTx, setScript, invokeScript, nodeInteraction } = require("@waves/waves-transactions");
 const rxrange = require('to-regex-range');
-const { address, base58Encode, base58Decode, publicKey } = require("@waves/waves-crypto");
+const { address, base58Encode, base58Decode, publicKey, privateKey } = require("@waves/waves-crypto");
 const fs = require("fs");
 const {rpcCall, rand256, serializeMessage, deserializeMessage, stringifyBigInts, unstringifyBigInts, fload, fsave, buff2bigintBe} = require("./zcrypto/src/utils.js")
 const babyJubJub = require("./zcrypto/src/babyJubJub.js");
@@ -31,9 +31,10 @@ async function accountDataEx(matches, address, nodeUrl) {
 
 
 
-const seed = env.MNEMONIC;
+let seed = env.MNEMONIC;
 const rpc = env.WAVES_RPC;
 const chainId = env.WAVES_CHAINID;
+
 const dApp = env.DAPP;
 const dAppPk = env.DAPPPK;
 
@@ -113,7 +114,7 @@ async function withdrawal(utxo, receiver, db) {
 
 async function transfer(in_utxo, out_utxo, db) {
   if (typeof db === "undefined") db = await syncData();
-  const in_eq = in_utxo[0].hash === in_utxo[1].hash;
+  const in_eq = (in_utxo.length===1) || (in_utxo[0].hash === in_utxo[1].hash);
 
   for (let i in in_utxo) {
     const utxo = in_utxo[i];
@@ -127,7 +128,9 @@ async function transfer(in_utxo, out_utxo, db) {
     assert(!(utxo.nullifier in db.nullifiers), "in_utxo is spent");
   }
 
-  assert((in_utxo[0].balance + in_utxo[1].balance * (in_eq ? 0n : 1n))===(BigInt(fee)+out_utxo[0].balance+out_utxo[1].balance), 
+  if(in_eq) assert(in_utxo[0].balance ===(BigInt(fee)+out_utxo[0].balance+out_utxo[1].balance), 
+  "Sum of input is not equal to sum of output");
+  else assert(in_utxo[0].balance + in_utxo[1].balance ===(BigInt(fee)+out_utxo[0].balance+out_utxo[1].balance), 
     "Sum of input is not equal to sum of output");
 
   for (let i in out_utxo) {
@@ -135,12 +138,14 @@ async function transfer(in_utxo, out_utxo, db) {
   }
 
   const all_utxos = Object.keys(db.utxos).map(BigInt);
-  const in_hashes = [in_utxo[0].hash, in_utxo[1].hash];
-  for (let i=0; i < ANONYMITY_SET-2; i++) {
+  const in_hashes = in_utxo.map(x=>x.hash);
+  for (let i=0; i < ANONYMITY_SET-in_utxo.length; i++) {
     in_hashes.push(all_utxos[Math.floor(Math.random()*all_utxos.length)]);
   }
 
   shuffle(in_hashes);
+  if (in_utxo.length==1) in_utxo = [in_utxo[0], in_utxo[0]];
+  
   const index=in_utxo.map(u=>in_hashes.indexOf(u.hash));
   const nullifier = in_utxo.map(x=>x.nullifier);
   const in_balance = in_utxo.map(x=>x.balance);
@@ -239,25 +244,195 @@ async function syncData() {
   return db;
 }
 
-console.log();
+const max = (...e) => {
+  let res = e[0];
+  for (let i = 1; i < e.length; i++) 
+    if (res < e[i]) res = e[i];
+  return res;
+}
+
+
+function randompk() {
+  return babyJubJub.pubkey(rand256().toString())[0];
+}
+
+
+async function balance(db) {
+  db = await collect(db);
+  const balance = await nodeInteraction.balance(address(seed, chainId));
+  const assets = Object.values(db.assets);
+  return [balance, assets[0].balance];
+}
+
+async function collect(db) {
+  db = typeof db === "undefined" ? await syncData() : db;
+  while(true) {
+    const assets = Object.values(db.assets);
+    if (assets.length<=1)
+      break;
+    for(let i = 1; i<assets.length; i+=2) {
+      const in_utxo = assets.slice(i-1, i+1);
+      const out_utxo = [{balance: 0n, pubkey:randompk()}, {balance:in_utxo[0].balance+in_utxo[1].balance-BigInt(fee),pubkey:in_utxo[0].pubkey}]
+      await transfer(in_utxo, out_utxo, db);
+    }
+    db = await syncData();
+  }
+  return db;
+}
+
+async function abstractTransfer(pubkey, balance, db) {
+  db = await collect(db);
+  const assets = Object.values(db.assets);
+  assert(assets[0].balance >= (balance +BigInt(fee)), "Not enough balance to transfer");
+  const in_utxo = [assets[0]];
+  const out_utxo = [{balance, pubkey}, {balance: assets[0].balance - balance - BigInt(fee), pubkey: assets[0].pubkey}];
+  await transfer(in_utxo, out_utxo, db);
+  return await syncData();
+}
+
+async function abstractWithdrawal(receiver, balance, db) {
+  receiver = typeof receiver === "bigint" ? receiver : address2bigint(receiver);
+  db = await collect(db);
+  let assets = Object.values(db.assets);
+  assert(assets[0].balance >= (balance + 2n * BigInt(fee)), "Not enough balance to withdraw");
+  db = await abstractTransfer(assets[0].pubkey, balance+BigInt(fee), db);
+  assets = Object.values(db.assets);
+  for(let i in assets) {
+    if(assets[i].balance == (balance + BigInt(fee))) {
+      await withdrawal(assets[i], receiver, db);
+      return await collect();
+    } 
+  }
+  throw("Unknown error");
+}
 
 
 
 
 
+
+
+const argv = require("yargs")
+    .version("0.1")
+    .usage(`nodejs cli.js <command> <options>
+account details command
+=============
+    nodejs cli.js details <option>
+    Print details of current seed (pubkey and address at waves, pubkey and private key at the DApp)
+    Print anonymous and not anonymous balance
+    -s or --seed <seed>
+
+deposit command
+=========================
+    nodejs cli.js deposit <options>
+    Deposit waves to the DApp.
+    -s or --seed <seed>
+      or
+    --pub <pubkey>
+    
+    -b or --balance <balance>
+
+withdrawal command
+========================
+    nodejs cli.js withdrawal <options>
+    Withdraw waves to address
+    -s or --seed <seed> 
+      or 
+    -a or --address <address>
+    
+    -b or --balance <balance>
+
+transfer command
+==============
+    nodejs cli.js transfer <options>
+    Transfer waves to another address.
+    -s or --seed <seed>
+     or
+    --pub <pubkey>
+    
+    -b or --balance <balance>
+        `)
+    .alias("s", "seed")
+    .alias("b", "balance")
+    .alias("a", "address")
+    .alias("h", "help")
+    .help("h")
+    .epilogue(` `)
+    .argv;
 
 (async ()=>{
-  const pubkey = babyJubJub.pubkey(seed)[0];
 
-  await deposit({balance:1000000n, pubkey});
-  await deposit({balance:1000000n, pubkey});
-  let db = await syncData();
-  let in_utxo = Object.values(db.assets).slice(-2);
-  let out_utxo = [{balance: 0n, pubkey}, {balance:2000000n-BigInt(fee), pubkey}];
-  console.log(db);
-  await transfer(in_utxo, out_utxo, db);
-  db = await syncData();
-  console.log(db);
+  if (argv._[0].toUpperCase() === "DETAILS") {
+    seed = argv.seed ? argv.seed : seed;
+    const assets = Object.values((await collect()).assets);
+    const balance = max((assets.length==1 ? assets[0].balance : 0n) - 2n*BigInt(fee), 0n);
+    console.log(`
+seed:\t\t\t${seed}
+waves private key:\t${privateKey(seed)}
+waves pubkey:\t\t${publicKey(seed)}
+waves address:\t\t${address(seed, chainId)}
+
+DApp private key:\t${babyJubJub.privkey(seed)}
+DApp public key:\t${babyJubJub.pubkey(seed)[0]}
+
+Waves balance:\t\t${await nodeInteraction.balance(address(seed, chainId), rpc)}
+DApp balance:\t\t${balance}
+    `); 
+  } else if(argv._[0].toUpperCase() === "DEPOSIT") {
+    const rseed = argv.seed ? argv.seed : seed;
+    const pubkey = argv.pub ? BigInt(argv.pub) : babyJubJub.pubkey(rseed)[0];
+    assert(typeof argv.balance !== 'undefined', "no balance specified");
+    const balance = BigInt(argv.balance);
+    assert(balance >= BigInt(fee), `balance must be more than fee (${fee})`);
+    console.log("Processing deposit...");
+    await deposit({balance, pubkey});
+    console.log("Collecting utxo into one...");
+    await collect();
+    console.log("OK");
+  } else if(argv._[0].toUpperCase() === "WITHDRAWAL") {
+    const rseed = argv.seed ? argv.seed : seed;
+    receiver = argv.address ? argv.address : address(rseed, chainId);
+    assert(typeof argv.balance !== 'undefined', "no balance specified");
+    const balance = BigInt(argv.balance);
+    console.log("Processing withdrawal...");
+    await abstractWithdrawal(receiver, balance);
+    console.log("OK");
+  } else if(argv._[0].toUpperCase() === "TRANSFER") {
+    const rseed = argv.seed ? argv.seed : seed;
+    const pubkey = argv.pub ? BigInt(argv.pub) : babyJubJub.pubkey(rseed)[0];
+    assert(typeof argv.balance !== 'undefined', "no balance specified");
+    const balance = BigInt(argv.balance);
+    assert(balance >= BigInt(fee), `balance must be more than fee (${fee})`);
+    console.log("Processing transfer...");
+    await abstractTransfer(pubkey, balance);
+    console.log("OK");
+  }
+
+  process.exit();
+})();
+
+
+// balance
+// deposit
+// transfer
+// withdraw
+
+//(async ()=>{
+  //let db = await syncData();
+  //console.log(db);
+  //console.log(await collect());
+
+  // const pubkey = babyJubJub.pubkey(seed)[0];
+
+  // await deposit({balance:1000000n, pubkey});
+  // await deposit({balance:1000000n, pubkey});
+  // let db = await syncData();
+  // let in_utxo = Object.values(db.assets).slice(-2);
+  // let out_utxo = [{balance: 0n, pubkey}, {balance:2000000n-BigInt(fee), pubkey}];
+  // console.log(db);
+  // await transfer(in_utxo, out_utxo, db);
+  // db = await syncData();
+  // console.log(db);
 
   // let db = await syncData();
   // console.log(db);
@@ -267,5 +442,5 @@ console.log();
 
   
 
-  process.exit();
-})()
+ // process.exit();
+//})()
