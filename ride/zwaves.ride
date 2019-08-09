@@ -205,6 +205,6 @@ func deposit(proof:ByteVector, v:ByteVector, m:ByteVector) = {
 func verify() = {
     match tx {
         case tx:InvokeScriptTransaction =>  (tx.function == "withdrawal") || (tx.function == "transfer") || sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
-        case _ => true #todo: replace to false
+        case _ => false
     }
 }
