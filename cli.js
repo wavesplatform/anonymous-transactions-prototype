@@ -37,7 +37,7 @@ const chainId = env.WAVES_CHAINID;
 
 
 const dAppPk = env.DAPP;
-const dApp = address(dAppPk, chainId);
+const dApp = address({publicKey:dAppPk}, chainId);
 
 const fee = 900000;
 
@@ -180,6 +180,11 @@ async function transfer(in_utxo, out_utxo, db) {
 
 }
 
+async function messageNum() {
+  const req = await nodeInteraction.accountDataByKey('MESSAGE_NUM', dApp, rpc);
+  if (req) return req.value; else return 0;
+}
+
 async function syncData() {
   const privkey = babyJubJub.privkey(seed);
   const pubkey = babyJubJub.pubkey(seed)[0];
@@ -190,7 +195,7 @@ async function syncData() {
   const push_asset = o => {db.assets[o.nullifier] = o };
 
 
-  const message_num = (await nodeInteraction.accountDataByKey('MESSAGE_NUM', dApp, rpc)).value;
+  const message_num = await messageNum();
   
   if(message_num===db.MESSAGE_NUM)
     return db;
