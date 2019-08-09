@@ -5,14 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "node node_modules/mocha/bin/mocha --exit test/transaction_zksnark_test.js",
-    "compile-deposit":"node node_modules/circom/cli.js circuits/Deposit.circom -o circuitsCompiled/Deposit.json",
-    "compile-transfer":"node node_modules/circom/cli.js circuits/Transfer.circom -o circuitsCompiled/Transfer.json",
-    "compile-withdrawal":"node node_modules/circom/cli.js circuits/Withdrawal.circom -o circuitsCompiled/Withdrawal.json",
-    "setup-deposit":"node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Deposit.json --protocol groth --pk circuitsCompiled/Deposit_pk.json --vk circuitsCompiled/Deposit_vk.json",
-    "setup-transfer":"node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Transfer.json --protocol groth --pk circuitsCompiled/Transfer_pk.json --vk circuitsCompiled/Transfer_vk.json",
-    "setup-withdrawal":"node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Withdrawal.json --protocol groth --pk circuitsCompiled/Withdrawal_pk.json --vk circuitsCompiled/Withdrawal_vk.json",
-    "compile":"node node_modules/concurrently/bin/concurrently.js npm:compile-deposit npm:compile-transfer npm:compile-withdrawal",
-    "setup":"node node_modules/concurrently/bin/concurrently.js npm:setup-deposit npm:setup-transfer npm:setup-withdrawal"
+    "compile-deposit": "node node_modules/circom/cli.js circuits/Deposit.circom -o circuitsCompiled/Deposit.json",
+    "compile-transfer": "node node_modules/circom/cli.js circuits/Transfer.circom -o circuitsCompiled/Transfer.json",
+    "compile-withdrawal": "node node_modules/circom/cli.js circuits/Withdrawal.circom -o circuitsCompiled/Withdrawal.json",
+    "setup-deposit": "node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Deposit.json --protocol groth --pk circuitsCompiled/Deposit_pk.json --vk circuitsCompiled/Deposit_vk.json",
+    "setup-transfer": "node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Transfer.json --protocol groth --pk circuitsCompiled/Transfer_pk.json --vk circuitsCompiled/Transfer_vk.json",
+    "setup-withdrawal": "node node_modules/snarkjs/cli.js setup -c circuitsCompiled/Withdrawal.json --protocol groth --pk circuitsCompiled/Withdrawal_pk.json --vk circuitsCompiled/Withdrawal_vk.json",
+    "compile": "node node_modules/concurrently/bin/concurrently.js npm:compile-deposit npm:compile-transfer npm:compile-withdrawal",
+    "setup": "node node_modules/concurrently/bin/concurrently.js npm:setup-deposit npm:setup-transfer npm:setup-withdrawal"
   },
   "repository": {
     "type": "git",
@@ -33,7 +33,7 @@
     "@waves/waves-crypto": "^3.0.17",
     "big-integer": "^1.6.42",
     "circom": "^0.0.30",
-    "circomlib": "0.0.10",
+    "circomlib": "0.0.12",
     "concurrently": "^4.1.1",
     "websnark": "^0.0.4",
     "yargs": "^13.3.0"
