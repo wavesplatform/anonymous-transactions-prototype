@@ -2,6 +2,23 @@
 
 This is anonymous transaction engine, implemented for waves blockchain. This is prototype, so, the project is very experimental.
 
+### Waves node
+
+The implementation works with modified waves node, supporting `groth16verify` function. The source code is at [https://github.com/snjax/Waves/tree/feature/groth16verifier](https://github.com/snjax/Waves/tree/feature/groth16verifier).
+
+Current state of `.env` file is
+
+```
+WAVES_RPC=http://dev-node-aws-fr-2.wavesnodes.com:6869/
+WAVES_CHAINID=D
+DAPP=C242DpWX1HrdiU2zLNiu6T4148nqdcRyedaCtocSxpMj
+MNEMONIC=<your seed passphrase>
+```
+
+### Faucet
+
+Type `node faucet.js` to get 100 test WAVES for your address, corresponding to `MNEMONIC`.
+
 ### Cryptography
 
 Anonymity is zkSNARK-driven, we use [circom](https://github.com/iden3/circom) and groth16 proving scheme at BN254. You may read more about the circuit at [circuit.md](circuit.md).
@@ -12,9 +29,7 @@ At current version anonimity set is not merkelized. Pedersen based merkle proofs
 
 We use utxo model for this solution. All utxo data is encrypted via receiver's public key on BabyJubJub curve.
 
-### Waves node
 
-The implementation works with modified waves node, supporting `groth16verify` function. The source code is at [https://github.com/snjax/Waves/tree/feature/groth16verifier](https://github.com/snjax/Waves/tree/feature/groth16verifier).
 
 ### Functionality
 
