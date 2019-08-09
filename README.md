@@ -26,10 +26,12 @@ Deposits are signed by user's private key at Curve25519. Each deposited asset co
 
 We use 2to2 transfers. The transactions are not signed via any keys, we use custom transaction verifier here. The fee is payable inside the zkSNARK. Input utxos are mixed with the set of random utxos.
 
+To get information about received utxos the user scans all messages and tries to decrypt them. If the message is decrypted successfully, the user can manage utxo, corresponding to this message.
 
 #### Withdrawals
 
 The transactions are not signed, the fee is payable inside the snark. The receiver address is specified inside the public input of the snark. Input utxo is mixed with the set of random utxos.
+
 
 
 
