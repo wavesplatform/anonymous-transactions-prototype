@@ -15,6 +15,8 @@ DAPP=2rdJzzFcVeignvBhKyubsPjxM8WdEYyje573eaebEDM8
 MNEMONIC=<your seed passphrase>
 ```
 
+The dApp is deployed at address `2rdJzzFcVeignvBhKyubsPjxM8WdEYyje573eaebEDM8` at the moment.
+
 ### Faucet
 
 Type `node faucet.js` to get 100 test WAVES for your address, corresponding to `MNEMONIC`.
