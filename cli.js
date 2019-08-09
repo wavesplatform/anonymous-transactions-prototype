@@ -35,8 +35,9 @@ let seed = env.MNEMONIC;
 const rpc = env.WAVES_RPC;
 const chainId = env.WAVES_CHAINID;
 
-const dApp = env.DAPP;
-const dAppPk = env.DAPPPK;
+
+const dAppPk = env.DAPP;
+const dApp = address(dAppPk, chainId);
 
 const fee = 900000;
 
@@ -145,7 +146,7 @@ async function transfer(in_utxo, out_utxo, db) {
 
   shuffle(in_hashes);
   if (in_utxo.length==1) in_utxo = [in_utxo[0], in_utxo[0]];
-  
+
   const index=in_utxo.map(u=>in_hashes.indexOf(u.hash));
   const nullifier = in_utxo.map(x=>x.nullifier);
   const in_balance = in_utxo.map(x=>x.balance);
@@ -312,7 +313,7 @@ async function abstractWithdrawal(receiver, balance, db) {
 
 
 
-const argv = require("yargs")
+const yargs = require("yargs")
     .version("0.1")
     .usage(`nodejs cli.js <command> <options>
 account details command
@@ -357,15 +358,17 @@ transfer command
     .alias("a", "address")
     .alias("h", "help")
     .help("h")
-    .epilogue(` `)
-    .argv;
+    .epilogue(` `);
+
+const {argv} = yargs;
 
 (async ()=>{
-
-  if (argv._[0].toUpperCase() === "DETAILS") {
+  if (typeof argv._[0] === "undefined") {
+    yargs.showHelp();
+  } else if (argv._[0].toUpperCase() === "DETAILS") {
     seed = argv.seed ? argv.seed : seed;
     const assets = Object.values((await collect()).assets);
-    const balance = max((assets.length==1 ? assets[0].balance : 0n) - 2n*BigInt(fee), 0n);
+    const balance = assets.length>=1 ? assets[0].balance : 0n;
     console.log(`
 seed:\t\t\t${seed}
 waves private key:\t${privateKey(seed)}
@@ -412,35 +415,3 @@ DApp balance:\t\t${balance}
 })();
 
 
-// balance
-// deposit
-// transfer
-// withdraw
-
-//(async ()=>{
-  //let db = await syncData();
-  //console.log(db);
-  //console.log(await collect());
-
-  // const pubkey = babyJubJub.pubkey(seed)[0];
-
-  // await deposit({balance:1000000n, pubkey});
-  // await deposit({balance:1000000n, pubkey});
-  // let db = await syncData();
-  // let in_utxo = Object.values(db.assets).slice(-2);
-  // let out_utxo = [{balance: 0n, pubkey}, {balance:2000000n-BigInt(fee), pubkey}];
-  // console.log(db);
-  // await transfer(in_utxo, out_utxo, db);
-  // db = await syncData();
-  // console.log(db);
-
-  // let db = await syncData();
-  // console.log(db);
-  // await withdrawal(Object.values(db.assets)[0], address2bigint(dApp), db);
-  // db = await syncData();
-  // console.log(db);
-
-  
-
- // process.exit();
-//})()

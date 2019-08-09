@@ -1,6 +1,6 @@
 const fetch = require("node-fetch");
 const { broadcast, waitForTx, setScript, invokeScript } = require("@waves/waves-transactions");
-const { address, base58Encode } = require("@waves/waves-crypto");
+const { address, base58Encode, publicKey } = require("@waves/waves-crypto");
 const fs = require("fs");
 const {rpcCall} = require("./zcrypto/src/utils.js");
 
@@ -40,6 +40,8 @@ const getVKSerialized = rpcCall("serializeVK");
   let tx = setScript({ script, fee: 1400000, chainId}, seed);
   await broadcast(tx, rpc);
   await waitForTx(tx.id, { apiBase: rpc });
+
+  console.log(`Dapp is deployed with public key ${publicKey(seed)}. Specify DAPP property at .env file.`)
 
   process.exit();
 })();
