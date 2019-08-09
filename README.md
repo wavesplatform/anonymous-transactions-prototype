@@ -85,6 +85,12 @@ Specify `DAPP` property at `.env` file.
 
 ## Client usage
 
+Install all dependencies
+```
+npm i&& cd zksnark && npm i && cd .. && cd zcrypto && npm i && cd ..
+```
+
+
 `.env` file must be composite of following variables
 
 |   |   |
