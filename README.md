@@ -11,7 +11,7 @@ Current state of `.env` file is
 ```
 WAVES_RPC=http://dev-node-aws-fr-2.wavesnodes.com:6869/
 WAVES_CHAINID=D
-DAPP=C242DpWX1HrdiU2zLNiu6T4148nqdcRyedaCtocSxpMj
+DAPP=2rdJzzFcVeignvBhKyubsPjxM8WdEYyje573eaebEDM8
 MNEMONIC=<your seed passphrase>
 ```
 
