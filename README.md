@@ -15,7 +15,7 @@ DAPP=2rdJzzFcVeignvBhKyubsPjxM8WdEYyje573eaebEDM8
 MNEMONIC=<your seed passphrase>
 ```
 
-The dApp is deployed at address `2rdJzzFcVeignvBhKyubsPjxM8WdEYyje573eaebEDM8` at the moment.
+The dApp is deployed at address `3FQ19SGXg2gXcd1AvQAwaP6Sd35knEqggVm` at the moment.
 
 ### Faucet
 
