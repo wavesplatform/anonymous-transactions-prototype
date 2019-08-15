@@ -2,6 +2,10 @@
 
 This is anonymous transaction engine, implemented for waves blockchain. This is prototype, so, the project is very experimental.
 
+### Dependencies
+
+`nodejs@11.15.0`
+
 ### Waves node
 
 The implementation works with modified waves node, supporting `groth16verify` function. The source code is at [https://github.com/snjax/Waves/tree/feature/groth16verifier](https://github.com/snjax/Waves/tree/feature/groth16verifier).
