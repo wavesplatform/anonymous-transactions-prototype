@@ -23,7 +23,7 @@
     "axios": "^0.19.0",
     "dotenv": "^6.2.0",
     "level": "^5.0.1",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "to-regex-range": "^5.0.1",
     "yargs": "^13.3.0"
   }
