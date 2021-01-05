@@ -20,7 +20,7 @@
     "@waves/waves-crypto": "^3.0.17",
     "@waves/waves-transactions": "^3.12.1",
     "assert": "^2.0.0",
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "dotenv": "^6.2.0",
     "level": "^5.0.1",
     "node-fetch": "^2.6.0",
