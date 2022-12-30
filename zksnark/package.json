@@ -25,7 +25,7 @@
   },
   "homepage": "https://github.com/wavesplatform/anonymous-transactions-prototype#readme",
   "devDependencies": {
-    "mocha": "^6.1.4",
+    "mocha": "^10.2.0",
     "snarkjs": "^0.1.14",
     "wasmbuilder": "0.0.3"
   },
